@@ -32,6 +32,12 @@
 void spray () {
 }
 
+/**
+ * This waits for any limit switch to be pressed.
+ *
+ * @return returns the limit switch pin that corresponds to the pressed
+ * limit switch after debouncing it.
+ */
 int waitPressAny () {
   char left;
 
@@ -39,6 +45,7 @@ int waitPressAny () {
   while (!(left = digitalRead (LEFT_LIMIT)) &&
          !(digitalRead (RIGHT_LIMIT)));
 
+  // debounce
   delay (100);
 
   return left ? LEFT_LIMIT : RIGHT_LIMIT;
