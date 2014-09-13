@@ -19,11 +19,31 @@
  *  Do paint job until you reach top limit:
  *    Do a stroke
  *    Transition
+ *
+ *  To do a stroke:
+ *    Wait for the indication of a start of a stroke, provided a stroke hasn't
+ *    been painted and the spray is at a stroke boundary.
+ *    If a sequence of Left, Left or Right, Right limit switches are hit, this
+ *    is an indication that a stroke should start and should be stopped at the
+ *    Left or Right depending on where the repeated sequence occured.
+ *
+ *  To transition:
+ *    Move the stepper motor a number of steps, such that, if the top limit is
+ *    reached abort the transition and stop the program.
  */
-#define STROKE_GAP          1000
-#define MIN                 2
-#define MAX                 4
+// Control variables
+#define STROKE_GAP          1000  // Vertical distance between each stroke
 
+#define MIN                 2     // Number of strokes with only the top spray
+#define MAX                 15    // Number of strokes with both sprays,
+                                  // more than that uses the bottom spray
+
+#define DEBOUNCE_TIME       150   // Milliseconds to wait after a change in limit switch state
+#define STEPPER_DELAY       600   // Microseconds between each step
+#define DOWN_DIRECTION      1     // The direction that leads the axel towards the bottom limit switch
+#define UP_DIRECTION        0
+
+// Pin declarations
 #define TOP_SPRAY           3
 #define BOTTOM_SPRAY        4
 
@@ -32,17 +52,11 @@
 #define STEPPER_DIRECTION   6
 #define STEPPER_STEP        7
 
-#define DOWN_DIRECTION      1
-#define UP_DIRECTION        0
-
-#define STEPPER_DELAY       600
-
 #define TOP_LIMIT           8
 #define BOTTOM_LIMIT        9
 #define LEFT_LIMIT          10
 #define RIGHT_LIMIT         11
 
-#define DEBOUNCE_TIME       150
 
 #define goDown digitalWrite(STEPPER_DIRECTION, DOWN_DIRECTION);\
                 digitalWrite(STEPPER_STEP, 1);\
@@ -106,13 +120,26 @@ void topSpray () {
  * limit switch after debouncing it.
  */
 int waitPressAny () {
-  char left;
+  char left, right;
+
+  Serial.println ("Waiting for any limit switch to be pressed...");
 
   // Wait for either to be pressed first
-  while (!(left = digitalRead (LEFT_LIMIT)) &&
-         !(digitalRead (RIGHT_LIMIT)));
+  while (!((left = digitalRead (LEFT_LIMIT)) ||
+        (right = digitalRead (RIGHT_LIMIT))));
 
-  // debounce
+  if (left && right) Serial.println ("Both are pressed... fix that!");
+
+  delay (DEBOUNCE_TIME);
+
+  if (left) {
+    while (digitalRead (LEFT_LIMIT));
+    Serial.println ("\tThe left limit switch has been pressed");
+  } else if (right) {
+    while (digitalRead (RIGHT_LIMIT));
+    Serial.println ("\tThe right limit switch has been pressed");
+  }
+
   delay (DEBOUNCE_TIME);
 
   return left ? LEFT_LIMIT : RIGHT_LIMIT;
@@ -123,19 +150,16 @@ int waitPressAny () {
  * currently pressed, return when the switch is released for the second time.
  */
 void waitSecondRelease (int limit) {
-  // Wait for the press to finish
+  // Wait for the button to be released
   while (digitalRead (limit));
-
   delay (DEBOUNCE_TIME);
 
-  // Wait for the press to finish, again
+  // Wait for the button to be pressed again
   while (!digitalRead (limit));
-
-  // debounce
   delay (DEBOUNCE_TIME);
 
+  // Wait for the button to be released again
   while (digitalRead (limit));
-
   delay (DEBOUNCE_TIME);
 }
 
@@ -149,36 +173,25 @@ int strokeWait () {
   char limit = waitPressAny ();
 
   if (limit == LEFT_LIMIT) {
-    // Wait for the button press to escape
-    while (digitalRead (LEFT_LIMIT));
-
     Serial.println ("Left limit pressed");
 
     limit = waitPressAny ();
 
     if (limit == LEFT_LIMIT) {
       Serial.println ("Left limit pressed again, end point to the right");
-      // Wait for the button press to escape
-      while (digitalRead (LEFT_LIMIT));
       return RIGHT_LIMIT;
     } else {
       waitSecondRelease (RIGHT_LIMIT);
-
       Serial.println ("Right limit pressed twice, end point to the left");
       return LEFT_LIMIT;
     }
   } else {
-    // Wait for the button press to escape
-    while (digitalRead (RIGHT_LIMIT));
-
     Serial.println ("Right limit pressed");
 
     limit = waitPressAny ();
 
     if (limit == RIGHT_LIMIT) {
-      // Wait for the button press to escape
       Serial.println ("Right limit pressed again, end point to the left");
-      while (digitalRead (RIGHT_LIMIT));
       return LEFT_LIMIT;
     } else {
       waitSecondRelease (LEFT_LIMIT);
@@ -218,17 +231,25 @@ void stroke () {
     while (!digitalRead (RIGHT_LIMIT));
   }
 
+  delay (DEBOUNCE_TIME);
+
   turnOffSprays ();
 
-  Serial.println ("Done spraying...");
-
   strokeCount++;
+
+  Serial.println ("Done spraying...");
 }
 
+/**
+ * Keeps moving in the bottom direction until the bottom limit switch is
+ * pressed.
+ */
 void goToBottom () {
   while (!digitalRead (BOTTOM_LIMIT)) {
     goDown;
   }
+
+  delay(DEBOUNCE_TIME);
 }
 
 /**
@@ -244,6 +265,7 @@ void goToBottom () {
  */
 void setup () {
   Serial.begin (9600);
+
   pinMode (TOP_SPRAY, OUTPUT);
   pinMode (BOTTOM_SPRAY, OUTPUT);
 
@@ -263,6 +285,7 @@ void setup () {
 void loop () {
   // Reset
   digitalWrite (STROKE_MOTOR, LOW);
+  // TODO enable this when the bottom solenoid is installed
   // goToBottom ();
 
   Serial.println ("Done Resetting!");
@@ -277,10 +300,11 @@ void loop () {
 
   Serial.println ("Done painting!");
 
+  // Hang and blink LED 13
   while (1) {
     digitalWrite (13, HIGH);
+    delay (300);
     digitalWrite (13, LOW);
+    delay (300);
   }
-
-  // Hang
 }
