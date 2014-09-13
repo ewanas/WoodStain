@@ -57,6 +57,17 @@
 #define LEFT_LIMIT          10
 #define RIGHT_LIMIT         11
 
+// #define __debug__
+
+#ifdef __debug__
+#define assert(c,e) if(!c) { Serial.println (e); while (1); }
+
+#define debug(m) Serial.println (m)
+#else
+#define assert(c,e) {}
+#define debug(m) {}
+#endif
+
 
 #define goDown digitalWrite(STEPPER_DIRECTION, DOWN_DIRECTION);\
                 digitalWrite(STEPPER_STEP, 1);\
@@ -122,22 +133,22 @@ void topSpray () {
 int waitPressAny () {
   char left, right;
 
-  Serial.println ("Waiting for any limit switch to be pressed...");
+  debug("Waiting for any limit switch to be pressed...");
 
   // Wait for either to be pressed first
   while (!((left = digitalRead (LEFT_LIMIT)) ||
         (right = digitalRead (RIGHT_LIMIT))));
 
-  if (left && right) Serial.println ("Both are pressed... fix that!");
+  if (left && right) debug ("Both are pressed... fix that!");
 
   delay (DEBOUNCE_TIME);
 
   if (left) {
     while (digitalRead (LEFT_LIMIT));
-    Serial.println ("\tThe left limit switch has been pressed");
+    debug ("\tThe left limit switch has been pressed");
   } else if (right) {
     while (digitalRead (RIGHT_LIMIT));
-    Serial.println ("\tThe right limit switch has been pressed");
+    debug ("\tThe right limit switch has been pressed");
   }
 
   delay (DEBOUNCE_TIME);
@@ -145,22 +156,30 @@ int waitPressAny () {
   return left ? LEFT_LIMIT : RIGHT_LIMIT;
 }
 
+void waitRelease (int limit) {
+  assert (digitalRead (limit),
+      "Waiting for an unpressed button to be released...Stopping");
+
+  while (digitalRead (limit));
+  delay (DEBOUNCE_TIME);
+}
+
+void waitPress (int limit) {
+  assert (!digitalRead (limit),
+      "Waiting for a pressed button to be pressed...Stopping");
+
+  while (!digitalRead (limit));
+  delay (DEBOUNCE_TIME);
+}
+
 /**
  * Provided that limit is a pin for a limit switch and the switch is
  * currently pressed, return when the switch is released for the second time.
  */
 void waitSecondRelease (int limit) {
-  // Wait for the button to be released
-  while (digitalRead (limit));
-  delay (DEBOUNCE_TIME);
-
-  // Wait for the button to be pressed again
-  while (!digitalRead (limit));
-  delay (DEBOUNCE_TIME);
-
-  // Wait for the button to be released again
-  while (digitalRead (limit));
-  delay (DEBOUNCE_TIME);
+  waitRelease (limit);
+  waitPress (limit);
+  waitRelease (limit);
 }
 
 /**
@@ -173,29 +192,29 @@ int strokeWait () {
   char limit = waitPressAny ();
 
   if (limit == LEFT_LIMIT) {
-    Serial.println ("Left limit pressed");
+    debug ("Left limit pressed");
 
     limit = waitPressAny ();
 
     if (limit == LEFT_LIMIT) {
-      Serial.println ("Left limit pressed again, end point to the right");
+      debug ("Left limit pressed again, end point to the right");
       return RIGHT_LIMIT;
     } else {
       waitSecondRelease (RIGHT_LIMIT);
-      Serial.println ("Right limit pressed twice, end point to the left");
+      debug ("Right limit pressed twice, end point to the left");
       return LEFT_LIMIT;
     }
   } else {
-    Serial.println ("Right limit pressed");
+    debug ("Right limit pressed");
 
     limit = waitPressAny ();
 
     if (limit == RIGHT_LIMIT) {
-      Serial.println ("Right limit pressed again, end point to the left");
+      debug ("Right limit pressed again, end point to the left");
       return LEFT_LIMIT;
     } else {
       waitSecondRelease (LEFT_LIMIT);
-      Serial.println ("Left limit pressed twice, end point to the right");
+      debug ("Left limit pressed twice, end point to the right");
       return RIGHT_LIMIT;
     }
   }
@@ -221,23 +240,22 @@ void stroke () {
     bottomSpray ();
   }
 
-  Serial.println ("Spraying...");
+  debug ("Spraying...");
 
   if (endPoint == LEFT_LIMIT) {
-    Serial.println ("Going to the left end point");
-    while (!digitalRead (LEFT_LIMIT));
+    debug ("Going to the left end point");
+    waitPress (LEFT_LIMIT);
   } else {
-    Serial.println ("Going to the right end point");
-    while (!digitalRead (RIGHT_LIMIT));
+    debug ("Going to the right end point");
+    waitPress (RIGHT_LIMIT);
   }
 
-  delay (DEBOUNCE_TIME);
 
   turnOffSprays ();
 
   strokeCount++;
 
-  Serial.println ("Done spraying...");
+  debug ("Done spraying...");
 }
 
 /**
@@ -288,17 +306,17 @@ void loop () {
   // TODO enable this when the bottom solenoid is installed
   // goToBottom ();
 
-  Serial.println ("Done Resetting!");
+  debug ("Done Resetting!");
 
   // Do paint job
   while (!digitalRead(TOP_LIMIT)) {
-    Serial.println ("Making a stroke!");
+    debug ("Making a stroke!");
     stroke();
-    Serial.println ("Moving!");
+    debug ("Moving!");
     transition();
   }
 
-  Serial.println ("Done painting!");
+  debug ("Done painting!");
 
   // Hang and blink LED 13
   while (1) {
