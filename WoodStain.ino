@@ -44,20 +44,20 @@
 #define UP_DIRECTION        0
 
 // Pin declarations
-#define TOP_SPRAY           3
-#define BOTTOM_SPRAY        4
+#define TOP_SPRAY           7
+#define BOTTOM_SPRAY        8
 
-#define STROKE_MOTOR        5
+#define STROKE_MOTOR        9
 
-#define STEPPER_DIRECTION   6
-#define STEPPER_STEP        7
+#define STEPPER_DIRECTION   11
+#define STEPPER_STEP        10
 
-#define TOP_LIMIT           8
-#define BOTTOM_LIMIT        9
-#define LEFT_LIMIT          10
-#define RIGHT_LIMIT         11
+#define TOP_LIMIT           3
+#define BOTTOM_LIMIT        4
+#define LEFT_LIMIT          5
+#define RIGHT_LIMIT         6
 
-// #define __debug__
+#define __debug__
 
 #ifdef __debug__
 #define assert(c,e) if(!c) { Serial.println (e); while (1); }
@@ -67,7 +67,6 @@
 #define assert(c,e) {}
 #define debug(m) {}
 #endif
-
 
 #define goDown digitalWrite(STEPPER_DIRECTION, DOWN_DIRECTION);\
                 digitalWrite(STEPPER_STEP, 1);\
@@ -83,12 +82,17 @@
 
 /**
  * Moves to the next stroke location.
+ * 
+ * If the top limit is reached before the transition is done, stop painting.
  */
 void transition () {
   turnOffSprays ();
   for (int i = 0; i < STROKE_GAP; i++) {
-    if (digitalRead (TOP_LIMIT)) break;
-    goDown;
+    if (digitalRead (TOP_LIMIT)) {
+      break;
+      Stop ("Limit reached before finishing stroke!");
+    }
+    goUp;
   }
 }
 
@@ -300,24 +304,11 @@ void setup () {
   pinMode (13, OUTPUT);
 }
 
-void loop () {
-  // Reset
-  digitalWrite (STROKE_MOTOR, LOW);
-  // TODO enable this when the bottom solenoid is installed
-  // goToBottom ();
-
-  debug ("Done Resetting!");
-
-  // Do paint job
-  while (!digitalRead(TOP_LIMIT)) {
-    debug ("Making a stroke!");
-    stroke();
-    debug ("Moving!");
-    transition();
-  }
-
-  debug ("Done painting!");
-
+/**
+ * Stops the paint program and displays the reason for stopping.
+ */
+void Stop (char* reason) {
+  debug (reason);
   // Hang and blink LED 13
   while (1) {
     digitalWrite (13, HIGH);
@@ -325,4 +316,25 @@ void loop () {
     digitalWrite (13, LOW);
     delay (300);
   }
+}
+
+void loop () {
+  // Reset
+  digitalWrite (STROKE_MOTOR, LOW);
+  // TODO enable this when the bottom solenoid is installed
+  goToBottom ();
+
+  debug ("Done Resetting!");
+
+  // Do paint job
+  digitalWrite (STROKE_MOTOR, HIGH);
+  while (!digitalRead(TOP_LIMIT)) {
+    debug ("Making a stroke!");
+    stroke();
+    debug ("Moving!");
+    transition();
+  }
+  digitalWrite (STROKE_MOTOR, LOW);
+
+  Stop ("Done painting!");
 }
