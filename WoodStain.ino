@@ -270,6 +270,7 @@ void stroke () {
  * pressed.
  */
 void goToBottom () {
+  debug ("Going to the bottom end of the machine");
   while (!digitalRead (BOTTOM_LIMIT)) {
     goDown;
   }
@@ -308,10 +309,21 @@ void setup () {
 }
 
 /**
+ * Turns off all the sprays and the stroke motor.
+ */
+void turnOffAll() {
+  debug ("Shutting down sprays and stroke motor");
+  digitalWrite (STROKE_MOTOR, LOW);
+  digitalWrite (TOP_SPRAY, LOW);
+  digitalWrite (BOTTOM_SPRAY, LOW);
+}
+
+/**
  * Stops the paint program and displays the reason for stopping.
  */
 void Stop (char* reason) {
   debug (reason);
+  turnOffAll ();
   // Hang and blink LED 13
   while (1) {
     digitalWrite (13, HIGH);
@@ -324,9 +336,7 @@ void Stop (char* reason) {
 void loop () {
   // Reset
   digitalWrite (STROKE_MOTOR, LOW);
-  // TODO enable this when the bottom solenoid is installed
   goToBottom ();
-
   debug ("Done Resetting!");
 
   // Do paint job
@@ -337,7 +347,7 @@ void loop () {
     debug ("Moving!");
     transition();
   }
-  digitalWrite (STROKE_MOTOR, LOW);
 
+  // Hang indefinitely
   Stop ("Done painting!");
 }
