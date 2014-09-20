@@ -60,7 +60,7 @@
 #define __debug__
 
 #ifdef __debug__
-#define assert(c,e) if(!c) { Serial.println (e); while (1); }
+#define assert(c,e) if (!c) { Stop (e) }
 
 #define debug(m) Serial.println (m)
 #else
@@ -136,6 +136,9 @@ void topSpray () {
  */
 int waitPressAny () {
   char left, right;
+
+  assert(!(digitalRead (LEFT_LIMIT) || digitalRead (RIGHT_LIMIT)),
+      "Waiting for buttons to be pressed when a button is already pressed");
 
   debug("Waiting for any limit switch to be pressed...");
 
