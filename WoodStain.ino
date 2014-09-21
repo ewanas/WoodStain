@@ -47,6 +47,7 @@
 #define TOP_SPRAY           7
 #define BOTTOM_SPRAY        8
 
+
 #define STROKE_MOTOR        9
 
 #define STEPPER_DIRECTION   11
@@ -80,6 +81,7 @@
                 digitalWrite(STEPPER_STEP, 0);\
                 delayMicroseconds(STEPPER_DELAY);
 
+
 /**
  * Moves to the next stroke location.
  * 
@@ -89,7 +91,6 @@ void transition () {
   turnOffSprays ();
   for (int i = 0; i < STROKE_GAP; i++) {
     if (digitalRead (TOP_LIMIT)) {
-      break;
       Stop ("Limit reached before finishing stroke!");
     }
     goUp;
@@ -146,7 +147,7 @@ int waitPressAny () {
   while (!((left = digitalRead (LEFT_LIMIT)) ||
         (right = digitalRead (RIGHT_LIMIT))));
 
-  if (left && right) debug ("Both are pressed... fix that!");
+  if (left && right) Stop ("Both the left and right limits are pressed. Fix that!");
 
   delay (DEBOUNCE_TIME);
 
@@ -163,6 +164,11 @@ int waitPressAny () {
   return left ? LEFT_LIMIT : RIGHT_LIMIT;
 }
 
+/**
+ * Waits for a limit switch to be released, provided that it's pressed.
+ *
+ * @param limit is the limit switch pin number
+ */
 void waitRelease (int limit) {
   assert (digitalRead (limit),
       "Waiting for an unpressed button to be released...Stopping");
@@ -171,6 +177,11 @@ void waitRelease (int limit) {
   delay (DEBOUNCE_TIME);
 }
 
+/**
+ * Waits for a limit switch to be pressed, provided that it's released.
+ *
+ * @param limit is the limit switch pin number
+ */
 void waitPress (int limit) {
   assert (!digitalRead (limit),
       "Waiting for a pressed button to be pressed...Stopping");
@@ -333,6 +344,11 @@ void Stop (char* reason) {
   }
 }
 
+/**
+ * This doesn't really loop as it hangs indefinitely in the end.
+ *
+ * The program is only repeated by resetting the microcontroller.
+ */
 void loop () {
   // Reset
   digitalWrite (STROKE_MOTOR, LOW);
