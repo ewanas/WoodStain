@@ -47,9 +47,14 @@
  *  To do a stroke:
  *    Wait for the indication of a start of a stroke, provided a stroke hasn't
  *    been painted and the spray is at a stroke boundary.
+ *    For horizontal strokes:
  *    If a sequence of Left, Left or Right, Right limit switches are hit, this
  *    is an indication that a stroke should start and should be stopped at the
  *    Left or Right depending on where the repeated sequence occured.
+ *
+ *    For vertical strokes:
+ *    The release of a vertical limit switch would indicate a start of a stroke
+ *    until the pressing of the other limit switch.
  *
  *  To transition:
  *    Move the stepper motor a number of steps, such that, if the top limit is
@@ -291,7 +296,6 @@ int waitPressAnyOfTwo (int a, int b) {
 
   return A ? a : b;
 }
-
 
 /**
  * This waits for any horizontal limit switch to be pressed.
