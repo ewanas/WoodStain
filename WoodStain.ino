@@ -655,6 +655,7 @@ void loop () {
   debug ("Reached the left! Done resetting");
 
   // Do vertical strokes
+  verticalMotor ();
   doStrokes (RIGHT);
 
   // Hang indefinitely
