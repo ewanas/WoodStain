@@ -80,7 +80,7 @@
 #define RIGHT_DIRECTION     0
 
 // Indicator LED pin
-#define LED                 13
+#define STATUS_LED          13
 
 // Solenoid pins
 #define TOP_SPRAY           7
@@ -484,6 +484,8 @@ void turnOffAll() {
  * Turns off both motors and updates the motor states.
  */
 void turnOffMotors () {
+  debug ("Turning off both induction motors");
+
   digitalWrite (HORIZONTAL_STROKE_MOTOR, LOW);
   digitalWrite (VERTICAL_STROKE_MOTOR, LOW);
 
@@ -494,6 +496,8 @@ void turnOffMotors () {
  * Turns on the horizontal induction motor and turning off the vertical.
  */
 void horizontalMotor () {
+  debug ("Turning on only the horizontal induction motor");
+
   digitalWrite (HORIZONTAL_STROKE_MOTOR, HIGH);
   digitalWrite (VERTICAL_STROKE_MOTOR, LOW);
 
@@ -504,6 +508,8 @@ void horizontalMotor () {
  * Turning on the vertical induction motor and turning on the horizontal.
  */
 void verticalMotor () {
+  debug ("Turning on only the vertical induction motor");
+
   digitalWrite (HORIZONTAL_STROKE_MOTOR, LOW);
   digitalWrite (VERTICAL_STROKE_MOTOR, HIGH);
 
@@ -516,11 +522,12 @@ void verticalMotor () {
 void Stop (const char* reason) {
   debug (reason);
   turnOffAll ();
-  // Hang and blink LED 13
+
+  // Hang and blink the status LED
   while (1) {
-    digitalWrite (LED, HIGH);
+    digitalWrite (STATUS_LED, HIGH);
     delay (300);
-    digitalWrite (LED, LOW);
+    digitalWrite (STATUS_LED, LOW);
     delay (300);
   }
 }
