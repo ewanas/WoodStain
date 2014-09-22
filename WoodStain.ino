@@ -2,23 +2,47 @@
  * A wood stain machine program.
  *
  * There are three limit switches. Top, Left, Right, Bottom.
- * One induction motor that is always on until the end of the job.
- * One stepper motor that moves the painting line after each full stroke.
- * Two solenoid valves that control which direction to spray the material in.
+ *
+ * Two induction motors such that
+ *  if the strokes are horizontal,
+ *    the horizonal motor is always on until horizontal strokes are over
+ *  if the strokes are vertical,
+ *    the vertical motor is always on until vertical strokes are over
+ *
+ * Two stepper motors such that
+ *  if the strokes are horizontal,
+ *    the vertical motor steps up with a predefined number of steps after each
+ *    stroke
+ *  if the strokes are vertical,
+ *    the horizontal motor steps up with a predefined number of steps after each
+ *    stroke
+ *
+ * Two solenoid valves such that
+ *  if the number of strokes is less than a set minimum
+ *    use the top spray only
+ *  if the number of strokes is between that set minimum and a set maximum
+ *    use both sprays
+ *  if the number of strokes is greater than that set maximum
+ *    use the bottom spray only
  *
  * The sequence for the program is:
  *    Reset
  *    Do paint job
  *    Stop
  *
- *  Reset:
- *    Go to the bottom of the machine in the position of the first stroke.
+ *  Reset horizontally:
  *    Stop all solenoids.
- *    Stop induction motor.
+ *    Stop all induction motors.
+ *    Move the paint head to the bottom limit switch and stop
+ *    Start the horizontal induction motor
+ *  Do horizontal strokes until the top limit is reached
  *
- *  Do paint job until you reach top limit:
- *    Do a stroke
- *    Transition
+ *  Reset vertically:
+ *    Stop all solenoids.
+ *    Stop all induction motors.
+ *    Move the paint head to the left limit switch and stop
+ *    start the vertical induction motor
+ *  Do vertical strokes until the right limit is reached
  *
  *  To do a stroke:
  *    Wait for the indication of a start of a stroke, provided a stroke hasn't
@@ -31,28 +55,48 @@
  *    Move the stepper motor a number of steps, such that, if the top limit is
  *    reached abort the transition and stop the program.
  */
-// Control variables
-#define STROKE_GAP          1000  // Vertical distance between each stroke
 
-#define MIN                 2     // Number of strokes with only the top spray
-#define MAX                 15    // Number of strokes with both sprays,
-                                  // more than that uses the bottom spray
+// Vertical distance between each stroke
+#define STROKE_GAP          1000 
 
-#define DEBOUNCE_TIME       150   // Milliseconds to wait after a change in limit switch state
-#define STEPPER_DELAY       600   // Microseconds between each step
-#define DOWN_DIRECTION      1     // The direction that leads the axel towards the bottom limit switch
+// The range within which both sprays work
+// Below MIN only the top spray works
+// Above MAX only the bottom spray works
+#define MIN                 2     
+#define MAX                 15    
+
+// Milliseconds to wait after a change in limit switch state
+#define DEBOUNCE_TIME       150   
+
+// Microseconds between each step
+#define STEPPER_DELAY       600  
+
+// The direction that leads the axel towards the top and bottom
+#define DOWN_DIRECTION      1     
 #define UP_DIRECTION        0
 
-// Pin declarations
+// The directions that lead the paint head towards the left and right
+#define LEFT_DIRECTION      1     
+#define RIGHT_DIRECTION     0
+
+// Indicator LED pin
+#define LED                 13
+
+// Solenoid pins
 #define TOP_SPRAY           7
 #define BOTTOM_SPRAY        8
 
+// Induction motor pins
+#define HORIZONTAL_STROKE_MOTOR         9
+#define VERTICAL_STROKE_MOTOR           14
 
-#define STROKE_MOTOR        9
+// Stepper motor pins
+#define VERTICAL_STEPPER_DIRECTION      11
+#define VERTICAL_STEPPER_STEP           10
+#define HORIZONTAL_STEPPER_DIRECTION    11
+#define HORIZONTAL_STEPPER_STEP         10
 
-#define STEPPER_DIRECTION   11
-#define STEPPER_STEP        10
-
+// Limit switch pins
 #define TOP_LIMIT           3
 #define BOTTOM_LIMIT        4
 #define LEFT_LIMIT          5
@@ -61,7 +105,7 @@
 #define __debug__
 
 #ifdef __debug__
-#define assert(c,e) if (!c) { Stop (e) }
+#define assert(c,e) if (!c) { Stop (e); }
 
 #define debug(m) Serial.println (m)
 #else
@@ -69,31 +113,109 @@
 #define debug(m) {}
 #endif
 
-#define goDown digitalWrite(STEPPER_DIRECTION, DOWN_DIRECTION);\
-                digitalWrite(STEPPER_STEP, 1);\
+#define goDown digitalWrite(VERTICAL_STEPPER_DIRECTION, DOWN_DIRECTION);\
+                digitalWrite(VERTICAL_STEPPER_STEP, 1);\
                 delayMicroseconds(STEPPER_DELAY);\
-                digitalWrite(STEPPER_STEP, 0);\
+                digitalWrite(VERTICAL_STEPPER_STEP, 0);\
                 delayMicroseconds(STEPPER_DELAY);
 
-#define goUp digitalWrite(STEPPER_DIRECTION, UP_DIRECTION);\
-                digitalWrite(STEPPER_STEP, 1);\
+#define goUp digitalWrite(VERTICAL_STEPPER_DIRECTION, UP_DIRECTION);\
+                digitalWrite(VERTICAL_STEPPER_STEP, 1);\
                 delayMicroseconds(STEPPER_DELAY);\
-                digitalWrite(STEPPER_STEP, 0);\
+                digitalWrite(VERTICAL_STEPPER_STEP, 0);\
                 delayMicroseconds(STEPPER_DELAY);
 
+#define goLeft digitalWrite(HORIZONTAL_STEPPER_DIRECTION, LEFT_DIRECTION);\
+                digitalWrite(HORIZONTAL_STEPPER_STEP, 1);\
+                delayMicroseconds(STEPPER_DELAY);\
+                digitalWrite(HORIZONTAL_STEPPER_STEP, 0);\
+                delayMicroseconds(STEPPER_DELAY);
+
+#define goRight digitalWrite(HORIZONTAL_STEPPER_DIRECTION, RIGHT_DIRECTION);\
+                digitalWrite(HORIZONTAL_STEPPER_STEP, 1);\
+                delayMicroseconds(STEPPER_DELAY);\
+                digitalWrite(HORIZONTAL_STEPPER_STEP, 0);\
+                delayMicroseconds(STEPPER_DELAY);
+
+#define UP      0
+#define DOWN    1
+#define LEFT    2
+#define RIGHT   3
+
+#define HORIZONTAL  0
+#define VERTICAL    1
+#define NONE        2
+
+int inductionState;
 
 /**
- * Moves to the next stroke location.
- * 
- * If the top limit is reached before the transition is done, stop painting.
+ * Gets the limit switch pin number corresponding to a given direction.
  */
-void transition () {
+int getLimit (int direction) {
+  int limitPin;
+
+  switch (direction) {
+    case LEFT:
+      limitPin = LEFT_LIMIT;
+      break;
+    case RIGHT:
+      limitPin = RIGHT_LIMIT;
+      break;
+    case UP:
+      limitPin = TOP_LIMIT;
+      break;
+    case DOWN:
+      limitPin = BOTTOM_LIMIT;
+      break;
+    default:
+      Stop ("Error in get limit because the direction is unknown..");
+      break;
+  }
+
+  return limitPin;
+}
+
+/**
+ * Take one step in a given direction.
+ */
+inline void go (int direction) {
+  switch (direction) {
+    case LEFT:
+      goLeft;
+      break;
+    case RIGHT:
+      goRight;
+      break;
+    case UP:
+      goUp;
+      break;
+    case DOWN:
+      goDown;
+      break;
+  }
+}
+
+/**
+ * Moves towards the next stroke location.
+ *
+ * @param direction is the direction to move a stroke's distance towards
+ */
+void transition (int direction) {
+  assert ((direction == UP || direction == DOWN) && inductionState == HORIZONTAL,
+      "Transitioning vertically while the vertical induction motor is on"
+      );
+  assert ((direction == LEFT || direction == RIGHT) && inductionState == VERTICAL,
+      "Transitioning horizontally while the horizontal direction motor is on"
+      );
+
+  int limit = getLimit (direction);
+
   turnOffSprays ();
   for (int i = 0; i < STROKE_GAP; i++) {
-    if (digitalRead (TOP_LIMIT)) {
-      Stop ("Limit reached before finishing stroke!");
+    if (digitalRead (limit)) {
+      Stop ("Limit reached before finishing transition!");
     }
-    goUp;
+    go (direction);
   }
 }
 
@@ -101,6 +223,7 @@ void transition () {
  * Turns off both spray guns.
  */
 void turnOffSprays () {
+  debug ("Turning off both sprays");
   digitalWrite (TOP_SPRAY, 0);
   digitalWrite (BOTTOM_SPRAY, 0);
 }
@@ -109,6 +232,7 @@ void turnOffSprays () {
  * Turns on both spray guns.
  */
 void bothSprays () {
+  debug ("Turning on both sprays");
   digitalWrite (TOP_SPRAY, 1);
   digitalWrite (BOTTOM_SPRAY, 1);
 }
@@ -117,6 +241,7 @@ void bothSprays () {
  * Turns off the top spray and leaves the bottom spray on.
  */
 void bottomSpray () {
+  debug ("Turning on the bottom spray");
   digitalWrite (TOP_SPRAY, 0);
   digitalWrite (BOTTOM_SPRAY, 1);
 }
@@ -125,43 +250,67 @@ void bottomSpray () {
  * Turns off the bottom spray and leaves the top spray on.
  */
 void topSpray () {
+  debug ("Turning on the top spray");
   digitalWrite (TOP_SPRAY, 1);
   digitalWrite (BOTTOM_SPRAY, 0);
 }
 
 /**
- * This waits for any limit switch to be pressed.
+ * This waits for any limit switch to be pressed from the two given
+ * limit switches.
  *
  * @return returns the limit switch pin that corresponds to the pressed
  * limit switch after debouncing it.
  */
-int waitPressAny () {
-  char left, right;
+int waitPressAnyOfTwo (int a, int b) {
+  char A, B;
 
-  assert(!(digitalRead (LEFT_LIMIT) || digitalRead (RIGHT_LIMIT)),
+  assert(!(digitalRead (a) || digitalRead (b)),
       "Waiting for buttons to be pressed when a button is already pressed");
 
   debug("Waiting for any limit switch to be pressed...");
 
   // Wait for either to be pressed first
-  while (!((left = digitalRead (LEFT_LIMIT)) ||
-        (right = digitalRead (RIGHT_LIMIT))));
+  while (!((A = digitalRead (a)) || (B = digitalRead (b))));
 
-  if (left && right) Stop ("Both the left and right limits are pressed. Fix that!");
+  if (A && B) Stop ("Both the A and B limits are pressed. Fix that!");
 
   delay (DEBOUNCE_TIME);
 
-  if (left) {
-    while (digitalRead (LEFT_LIMIT));
-    debug ("\tThe left limit switch has been pressed");
-  } else if (right) {
-    while (digitalRead (RIGHT_LIMIT));
-    debug ("\tThe right limit switch has been pressed");
+  if (A) {
+    while (digitalRead (a));
+    debug ("\tThe A limit switch has been pressed");
+  } else if (B) {
+    while (digitalRead (b));
+    debug ("\tThe B limit switch has been pressed");
   }
 
   delay (DEBOUNCE_TIME);
 
-  return left ? LEFT_LIMIT : RIGHT_LIMIT;
+  return A ? a : b;
+}
+
+
+/**
+ * This waits for any horizontal limit switch to be pressed.
+ *
+ * @return returns the limit switch pin that corresponds to the pressed
+ * limit switch after debouncing it.
+ */
+int waitPressAnyHorizontal () {
+  debug ("Waiting for any horizontal limit switch to be pressed");
+  return waitPressAnyOfTwo (LEFT_LIMIT, RIGHT_LIMIT);
+}
+
+/**
+ * This waits for any vertical limit switch to be pressed.
+ *
+ * @return returns the limit switch pin that corresponds to the pressed
+ * limit switch after debouncing it.
+ */
+int waitPressAnyVertical () {
+  debug ("Waiting for any vertical limit switch to be pressed");
+  return waitPressAnyOfTwo (TOP_LIMIT, BOTTOM_LIMIT);
 }
 
 /**
@@ -206,13 +355,14 @@ void waitSecondRelease (int limit) {
  * @return if Left Left, return the pin for the Right limit switch,
  *          Otherwise, return the pin for the Left limit switch
  */
-int strokeWait () {
-  char limit = waitPressAny ();
+int horizontalStrokeWait () {
+  debug ("Waiting to start a horizontal stroke");
+  char limit = waitPressAnyOfTwo (LEFT_LIMIT, RIGHT_LIMIT);
 
   if (limit == LEFT_LIMIT) {
     debug ("Left limit pressed");
 
-    limit = waitPressAny ();
+    limit = waitPressAnyOfTwo (LEFT_LIMIT, RIGHT_LIMIT);
 
     if (limit == LEFT_LIMIT) {
       debug ("Left limit pressed again, end point to the right");
@@ -225,7 +375,7 @@ int strokeWait () {
   } else {
     debug ("Right limit pressed");
 
-    limit = waitPressAny ();
+    limit = waitPressAnyOfTwo (LEFT_LIMIT, RIGHT_LIMIT);
 
     if (limit == RIGHT_LIMIT) {
       debug ("Right limit pressed again, end point to the left");
@@ -243,10 +393,10 @@ int strokeWait () {
  * Otherwise, if the stroke is less than MIN, spray only the BOTTOM_SPRAY
  *            if the stroke is greater than MAX, spray only the TOP_SPRAY
  */
-void stroke () {
+void horizontalStroke () {
   static int strokeCount = 0;
 
-  int endPoint = strokeWait ();
+  int endPoint = horizontalStrokeWait ();
 
   // Turn on the appropriate solenoids based on which stroke
   // is currently being drawn
@@ -258,35 +408,167 @@ void stroke () {
     bottomSpray ();
   }
 
-  debug ("Spraying...");
-
   if (endPoint == LEFT_LIMIT) {
     debug ("Going to the left end point");
-    waitPress (LEFT_LIMIT);
   } else {
     debug ("Going to the right end point");
-    waitPress (RIGHT_LIMIT);
   }
 
+  waitPress (endPoint);
 
   turnOffSprays ();
 
   strokeCount++;
 
-  debug ("Done spraying...");
+  debug ("Done spraying horizontally...");
 }
 
 /**
- * Keeps moving in the bottom direction until the bottom limit switch is
+ * Waits for the start of a vertical stroke and returns the limit switch
+ * pin that if pressed would indicate the stroke is finished.
+ */
+int verticalStrokeWait () {
+  int limit = waitPressAnyOfTwo (TOP_LIMIT, BOTTOM_LIMIT);
+
+  return (limit == TOP_LIMIT ? BOTTOM_LIMIT : TOP_LIMIT);
+}
+
+/**
+ * Does a vertical stroke.
+ */
+void verticalStroke () {
+  static int strokeCount = 0;
+
+  int limit = verticalStrokeWait ();
+
+  bothSprays ();
+  waitPress (limit);
+  turnOffSprays ();
+
+  strokeCount++;
+}
+
+/**
+ * Keeps moving in the given direction until the direction's limit switch is
  * pressed.
  */
-void goToBottom () {
-  debug ("Going to the bottom end of the machine");
-  while (!digitalRead (BOTTOM_LIMIT)) {
-    goDown;
+void goUntil (int direction) {
+#ifdef __debug__
+  char msg[50];
+  sprintf (msg, "Going to the %s end of the machine",
+      direction == LEFT ? "left" :
+      direction == RIGHT ? "right" :
+      direction == DOWN ? "bottom" : "top");
+#endif
+
+  debug (msg);
+  int limit = getLimit (direction);
+  while (!digitalRead (limit)) {
+    go (direction);
   }
 
   delay(DEBOUNCE_TIME);
+}
+
+/**
+ * Turns off all the sprays and the stroke motor.
+ */
+void turnOffAll() {
+  debug ("Shutting down sprays and stroke motors");
+
+  turnOffMotors ();
+  turnOffSprays ();
+}
+
+/**
+ * Turns off both motors and updates the motor states.
+ */
+void turnOffMotors () {
+  digitalWrite (HORIZONTAL_STROKE_MOTOR, LOW);
+  digitalWrite (VERTICAL_STROKE_MOTOR, LOW);
+
+  inductionState = NONE;
+}
+
+/**
+ * Turns on the horizontal induction motor and turning off the vertical.
+ */
+void horizontalMotor () {
+  digitalWrite (HORIZONTAL_STROKE_MOTOR, HIGH);
+  digitalWrite (VERTICAL_STROKE_MOTOR, LOW);
+
+  inductionState = HORIZONTAL;
+}
+
+/**
+ * Turning on the vertical induction motor and turning on the horizontal.
+ */
+void verticalMotor () {
+  digitalWrite (HORIZONTAL_STROKE_MOTOR, LOW);
+  digitalWrite (VERTICAL_STROKE_MOTOR, HIGH);
+
+  inductionState = VERTICAL;
+}
+
+/**
+ * Stops the paint program and displays the reason for stopping.
+ */
+void Stop (const char* reason) {
+  debug (reason);
+  turnOffAll ();
+  // Hang and blink LED 13
+  while (1) {
+    digitalWrite (LED, HIGH);
+    delay (300);
+    digitalWrite (LED, LOW);
+    delay (300);
+  }
+}
+
+/**
+ * Does strokes perpendicular to the given direction.
+ */
+void doStrokes (int direction) {
+#ifdef __debug__
+  char msg[50];
+  sprintf (msg, "Doing %s strokes until the %s limit is reached",
+      direction == UP || direction == DOWN ? "horizontal" : "vertical",
+      direction == UP ? "top" :
+      direction == DOWN ? "bottom" :
+      direction == LEFT ? "left" : "right");
+#endif
+  debug (msg);
+
+  int limit;
+
+  limit = getLimit (direction);
+
+  switch (direction) {
+    case UP:
+      while (!digitalRead (limit)) {
+        horizontalStroke ();
+        transition (UP);
+      }
+      break;
+    case DOWN:
+      while (!digitalRead (limit)) {
+        horizontalStroke ();
+        transition (DOWN);
+      }
+      break;
+    case LEFT:
+      while (!digitalRead (limit)) {
+        verticalStroke ();
+        transition (LEFT);
+      }
+      break;
+    case RIGHT:
+      while (!digitalRead (limit)) {
+        verticalStroke ();
+        transition (RIGHT);
+      }
+      break;
+  }
 }
 
 /**
@@ -306,10 +588,14 @@ void setup () {
   pinMode (TOP_SPRAY, OUTPUT);
   pinMode (BOTTOM_SPRAY, OUTPUT);
 
-  pinMode (STEPPER_DIRECTION, OUTPUT);
-  pinMode (STEPPER_STEP, OUTPUT);
+  pinMode (HORIZONTAL_STEPPER_DIRECTION, OUTPUT);
+  pinMode (HORIZONTAL_STEPPER_STEP, OUTPUT);
 
-  pinMode (STROKE_MOTOR, OUTPUT);
+  pinMode (VERTICAL_STEPPER_DIRECTION, OUTPUT);
+  pinMode (VERTICAL_STEPPER_STEP, OUTPUT);
+
+  pinMode (HORIZONTAL_STROKE_MOTOR, OUTPUT);
+  pinMode (VERTICAL_STROKE_MOTOR, OUTPUT);
 
   pinMode (BOTTOM_LIMIT, INPUT);
   pinMode (TOP_LIMIT, INPUT);
@@ -317,31 +603,8 @@ void setup () {
   pinMode (LEFT_LIMIT, INPUT);
   pinMode (RIGHT_LIMIT, INPUT);
   pinMode (13, OUTPUT);
-}
 
-/**
- * Turns off all the sprays and the stroke motor.
- */
-void turnOffAll() {
-  debug ("Shutting down sprays and stroke motor");
-  digitalWrite (STROKE_MOTOR, LOW);
-  digitalWrite (TOP_SPRAY, LOW);
-  digitalWrite (BOTTOM_SPRAY, LOW);
-}
-
-/**
- * Stops the paint program and displays the reason for stopping.
- */
-void Stop (char* reason) {
-  debug (reason);
-  turnOffAll ();
-  // Hang and blink LED 13
-  while (1) {
-    digitalWrite (13, HIGH);
-    delay (300);
-    digitalWrite (13, LOW);
-    delay (300);
-  }
+  debug ("Done initializing...");
 }
 
 /**
@@ -350,19 +613,22 @@ void Stop (char* reason) {
  * The program is only repeated by resetting the microcontroller.
  */
 void loop () {
-  // Reset
-  digitalWrite (STROKE_MOTOR, LOW);
-  goToBottom ();
-  debug ("Done Resetting!");
+  // Reset vertically
+  turnOffAll ();
+  goUntil (DOWN);
+  debug ("Reached the bottom! Done resetting");
 
-  // Do paint job
-  digitalWrite (STROKE_MOTOR, HIGH);
-  while (!digitalRead(TOP_LIMIT)) {
-    debug ("Making a stroke!");
-    stroke();
-    debug ("Moving!");
-    transition();
-  }
+  // Do horizontal strokes
+  horizontalMotor ();
+  doStrokes(UP);
+
+  // Reset horizontally
+  turnOffAll ();
+  goUntil (LEFT);
+  debug ("Reached the left! Done resetting");
+
+  // Do vertical strokes
+  doStrokes (RIGHT);
 
   // Hang indefinitely
   Stop ("Done painting!");
