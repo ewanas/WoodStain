@@ -67,6 +67,7 @@
 
 // Milliseconds to wait after a change in limit switch state
 #define DEBOUNCE_TIME       150   
+#define MOTOR_SWITCH_DELAY  3000 // Wait 3 seconds after switching off the motor
 
 // Microseconds between each step
 #define STEPPER_DELAY       600  
@@ -87,8 +88,9 @@
 #define BOTTOM_SPRAY        8
 
 // Induction motor pins
-#define HORIZONTAL_STROKE_MOTOR         9
-#define VERTICAL_STROKE_MOTOR           14
+#define HORIZONTAL_MOTOR_SELECT   10
+#define VERTICAL_MOTOR_SELECT     10
+#define MOTOR_STATE_PIN           11
 
 // Stepper motor pins
 #define VERTICAL_STEPPER_DIRECTION      11
@@ -486,8 +488,9 @@ void turnOffAll() {
 void turnOffMotors () {
   debug ("Turning off both induction motors");
 
-  digitalWrite (HORIZONTAL_STROKE_MOTOR, LOW);
-  digitalWrite (VERTICAL_STROKE_MOTOR, LOW);
+  digitalWrite (MOTOR_STATE_PIN, LOW);
+
+  delay (MOTOR_SWITCH_DELAY);
 
   inductionState = NONE;
 }
@@ -498,8 +501,14 @@ void turnOffMotors () {
 void horizontalMotor () {
   debug ("Turning on only the horizontal induction motor");
 
-  digitalWrite (HORIZONTAL_STROKE_MOTOR, HIGH);
-  digitalWrite (VERTICAL_STROKE_MOTOR, LOW);
+  digitalWrite (MOTOR_STATE_PIN, LOW);
+
+  delay (MOTOR_SWITCH_DELAY);
+
+  digitalWrite (HORIZONTAL_MOTOR_SELECT, HIGH);
+  digitalWrite (VERTICAL_MOTOR_SELECT, LOW);
+
+  digitalWrite (MOTOR_STATE_PIN, HIGH);
 
   inductionState = HORIZONTAL;
 }
@@ -510,8 +519,14 @@ void horizontalMotor () {
 void verticalMotor () {
   debug ("Turning on only the vertical induction motor");
 
-  digitalWrite (HORIZONTAL_STROKE_MOTOR, LOW);
-  digitalWrite (VERTICAL_STROKE_MOTOR, HIGH);
+  digitalWrite (MOTOR_STATE_PIN, LOW);
+
+  delay (MOTOR_SWITCH_DELAY);
+
+  digitalWrite (HORIZONTAL_MOTOR_SELECT, LOW);
+  digitalWrite (VERTICAL_MOTOR_SELECT, HIGH);
+
+  digitalWrite (MOTOR_STATE_PIN, HIGH);
 
   inductionState = VERTICAL;
 }
@@ -601,8 +616,9 @@ void setup () {
   pinMode (VERTICAL_STEPPER_DIRECTION, OUTPUT);
   pinMode (VERTICAL_STEPPER_STEP, OUTPUT);
 
-  pinMode (HORIZONTAL_STROKE_MOTOR, OUTPUT);
-  pinMode (VERTICAL_STROKE_MOTOR, OUTPUT);
+  pinMode (HORIZONTAL_MOTOR_SELECT, OUTPUT);
+  pinMode (VERTICAL_MOTOR_SELECT, OUTPUT);
+  pinMode (MOTOR_STATE_PIN, OUTPUT);
 
   pinMode (BOTTOM_LIMIT, INPUT);
   pinMode (TOP_LIMIT, INPUT);
