@@ -272,7 +272,7 @@ void topSpray () {
 int waitPressAnyOfTwo (int a, int b) {
   char A, B;
 
-  assert(!(digitalRead (a) || digitalRead (b)),
+  assert (!(digitalRead (a) || digitalRead (b)),
       "Waiting for buttons to be pressed when a button is already pressed");
 
   debug("Waiting for any limit switch to be pressed...");
