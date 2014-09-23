@@ -85,6 +85,28 @@ inline void go (int direction) {
 }
 
 /**
+ * Keeps moving in the given direction until the direction's limit switch is
+ * pressed.
+ */
+void goUntil (int direction) {
+#ifdef __debug__
+  char msg[50];
+  sprintf (msg, "Going to the %s end of the machine",
+      direction == LEFT ? "left" :
+      direction == RIGHT ? "right" :
+      direction == DOWN ? "bottom" : "top");
+#endif
+
+  debug (msg);
+  int limit = getLimit (direction);
+  while (!digitalRead (limit)) {
+    go (direction);
+  }
+
+  delay(DEBOUNCE_TIME);
+}
+
+/**
  * Moves towards the next stroke location.
  *
  * @param direction is the direction to move a stroke's distance towards
@@ -205,28 +227,6 @@ void verticalStroke () {
   turnOffSprays ();
 
   strokeCount++;
-}
-
-/**
- * Keeps moving in the given direction until the direction's limit switch is
- * pressed.
- */
-void goUntil (int direction) {
-#ifdef __debug__
-  char msg[50];
-  sprintf (msg, "Going to the %s end of the machine",
-      direction == LEFT ? "left" :
-      direction == RIGHT ? "right" :
-      direction == DOWN ? "bottom" : "top");
-#endif
-
-  debug (msg);
-  int limit = getLimit (direction);
-  while (!digitalRead (limit)) {
-    go (direction);
-  }
-
-  delay(DEBOUNCE_TIME);
 }
 
 /**
