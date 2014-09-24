@@ -137,7 +137,7 @@ void transition (int direction) {
  *          Otherwise, return the pin for the Left limit switch
  */
 int horizontalStrokeWait () {
-  debug ("Waiting to start a horizontal stroke");
+  debug ("Waiting for a horizontal stroke");
   char limit = waitPressAnyOfTwo (LEFT_LIMIT, RIGHT_LIMIT);
 
   if (limit == LEFT_LIMIT) {
@@ -209,6 +209,8 @@ void horizontalStroke () {
  * pin that if pressed would indicate the stroke is finished.
  */
 int verticalStrokeWait () {
+  debug ("Waiting for a vertical stroke");
+
   int limit = waitPressAnyOfTwo (TOP_LIMIT, BOTTOM_LIMIT);
 
   return (limit == TOP_LIMIT ? BOTTOM_LIMIT : TOP_LIMIT);
