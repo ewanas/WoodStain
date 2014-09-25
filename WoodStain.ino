@@ -99,6 +99,13 @@ void goUntil (int direction) {
 
   debug (msg);
   int limit = getLimit (direction);
+
+  if (direction == UP || direction == DOWN) {
+    digitalWrite (VERTICAL_STEPPER_ENABLE, LOW);
+  } else {
+    digitalWrite (HORIZONTAL_STEPPER_ENABLE, LOW);
+  }
+
   while (!digitalRead (limit)) {
     go (direction);
   }
@@ -120,6 +127,12 @@ void transition (int direction) {
       );
 
   int limit = getLimit (direction);
+
+  if (direction == UP || direction == DOWN) {
+    digitalWrite (VERTICAL_STEPPER_ENABLE, LOW);
+  } else {
+    digitalWrite (HORIZONTAL_STEPPER_ENABLE, LOW);
+  }
 
   turnOffSprays ();
   for (int i = 0; i < STROKE_GAP; i++) {
@@ -238,6 +251,7 @@ void horizontalMotor () {
   debug ("Turning on only the horizontal induction motor");
 
   digitalWrite (MOTOR_STATE_PIN, LOW);
+  digitalWrite (HORIZONTAL_STEPPER_ENABLE, HIGH);
 
   delay (MOTOR_SWITCH_DELAY);
 
@@ -256,6 +270,7 @@ void verticalMotor () {
   debug ("Turning on only the vertical induction motor");
 
   digitalWrite (MOTOR_STATE_PIN, LOW);
+  digitalWrite (VERTICAL_STEPPER_ENABLE, HIGH);
 
   delay (MOTOR_SWITCH_DELAY);
 
@@ -332,9 +347,11 @@ void setup () {
 
   pinMode (HORIZONTAL_STEPPER_DIRECTION, OUTPUT);
   pinMode (HORIZONTAL_STEPPER_STEP, OUTPUT);
+  pinMode (HORIZONTAL_STEPPER_ENABLE, OUTPUT);
 
   pinMode (VERTICAL_STEPPER_DIRECTION, OUTPUT);
   pinMode (VERTICAL_STEPPER_STEP, OUTPUT);
+  pinMode (VERTICAL_STEPPER_ENABLE, OUTPUT);
 
   pinMode (HORIZONTAL_MOTOR_SELECT, OUTPUT);
   pinMode (VERTICAL_MOTOR_SELECT, OUTPUT);
@@ -345,7 +362,7 @@ void setup () {
 
   pinMode (LEFT_LIMIT, INPUT);
   pinMode (RIGHT_LIMIT, INPUT);
-  pinMode (13, OUTPUT);
+  pinMode (LED, OUTPUT);
 
   debug ("Done initializing...");
 }

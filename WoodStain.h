@@ -44,8 +44,10 @@ int inductionState;
 // Stepper motor pins
 #define VERTICAL_STEPPER_DIRECTION      11
 #define VERTICAL_STEPPER_STEP           10
+#define VERTICAL_STEPPER_ENABLE         10
 #define HORIZONTAL_STEPPER_DIRECTION    11
 #define HORIZONTAL_STEPPER_STEP         10
+#define HORIZONTAL_STEPPER_ENABLE       10
 
 // Limit switch pins
 #define TOP_LIMIT           3
@@ -104,6 +106,12 @@ void turnOffMotors () {
   debug ("Turning off both induction motors");
 
   digitalWrite (MOTOR_STATE_PIN, LOW);
+
+  digitalWrite (HORIZONTAL_MOTOR_SELECT, LOW);
+  digitalWrite (VERTICAL_MOTOR_SELECT, LOW);
+
+  digitalWrite (HORIZONTAL_STEPPER_ENABLE, HIGH);
+  digitalWrite (VERTICAL_STEPPER_ENABLE, HIGH);
 
   delay (MOTOR_SWITCH_DELAY);
 

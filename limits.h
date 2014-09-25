@@ -45,7 +45,7 @@ int waitPressAnyOfTwo (int a, int b) {
   // Wait for either to be pressed first
   while (!((A = digitalRead (a)) || (B = digitalRead (b))));
 
-  if (A && B) Stop ("Both the A and B limits are pressed. Fix that!");
+  assert (!(A && B), "Both the A and B limits are pressed. Fix that!");
 
   delay (DEBOUNCE_TIME);
 
