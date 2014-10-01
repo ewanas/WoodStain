@@ -317,7 +317,7 @@ void doStrokes (int direction) {
 #ifdef __debug__
   char msg[100];
   sprintf (msg, "Doing %s strokes until the %s limit is reached",
-      isVertical (direction) ? "vertical" : "horizontal",
+      !isVertical (direction) ? "vertical" : "horizontal",
       nameStr (direction));
 #endif
   debug (msg);
