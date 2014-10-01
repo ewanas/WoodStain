@@ -65,6 +65,31 @@
 #include "sprays.h"
 
 /**
+ * Returns whether a direction is vertical
+ */
+int isVertical(int direction) {
+  return direction == UP || direction == DOWN;
+}
+
+/**
+ * Returns the extreme string representation of a direction.
+ */
+const char* extremeStr (int direction) {
+  return direction == UP ? "top" :
+          direction == DOWN ? "bottom" :
+          direction == LEFT ? "leftmost" : "rightmost";
+}
+
+/**
+ * Direction names.
+ */
+const char* nameStr (int direction) {
+  return direction == UP ? "up" :
+          direction == DOWN ? "down" :
+          direction == LEFT ? "left" : "right";
+}
+
+/**
  * Take one step in a given direction.
  */
 inline void go (int direction) {
@@ -91,16 +116,13 @@ inline void go (int direction) {
 void goUntil (int direction) {
 #ifdef __debug__
   char msg[100];
-  sprintf (msg, "Going to the %s end of the machine",
-      direction == LEFT ? "left" :
-      direction == RIGHT ? "right" :
-      direction == DOWN ? "bottom" : "top");
+  sprintf (msg, "Going to the %s end of the machine", extremeStr (direction));
 #endif
 
   debug (msg);
   int limit = getLimit (direction);
 
-  if (direction == UP || direction == DOWN) {
+  if (isVertical (direction)) {
     digitalWrite (VERTICAL_STEPPER_ENABLE, LOW);
   } else {
     digitalWrite (HORIZONTAL_STEPPER_ENABLE, LOW);
@@ -119,27 +141,26 @@ void goUntil (int direction) {
  * @param direction is the direction to move a stroke's distance towards
  */
 void transition (int direction) {
-  assert ((direction == UP || direction == DOWN) && inductionState == HORIZONTAL,
+#ifdef __debug__
+  static char msg[100];
+  sprintf (msg, "Going %s by %d steps", nameStr (direction), STROKE_GAP);
+  debug (msg);
+#endif
+
+  assert (isVertical (direction) && inductionState == HORIZONTAL,
       "Transitioning vertically while the vertical induction motor is on"
       );
-  assert ((direction == LEFT || direction == RIGHT) && inductionState == VERTICAL,
+  assert (!isVertical(direction) && inductionState == VERTICAL,
       "Transitioning horizontally while the horizontal direction motor is on"
       );
-
   int limit = getLimit (direction);
 
-  if (direction == UP || direction == DOWN) {
+  if (isVertical (direction)) {
     digitalWrite (VERTICAL_STEPPER_ENABLE, LOW);
   } else {
     digitalWrite (HORIZONTAL_STEPPER_ENABLE, LOW);
   }
 
-  static char msg[100];
-  sprintf (msg, "Going %s by %d steps",
-    direction == UP ? "UP" :
-    direction == DOWN ? "DOWN" :
-    direction == LEFT ? "LEFT" : "RIGHT", STROKE_GAP);
-  Serial.println (msg);
   turnOffSprays ();
   for (int i = 0; i < STROKE_GAP; i++) {
     if (digitalRead (limit)) {
@@ -296,10 +317,8 @@ void doStrokes (int direction) {
 #ifdef __debug__
   char msg[100];
   sprintf (msg, "Doing %s strokes until the %s limit is reached",
-      direction == UP || direction == DOWN ? "horizontal" : "vertical",
-      direction == UP ? "top" :
-      direction == DOWN ? "bottom" :
-      direction == LEFT ? "left" : "right");
+      isVertical (direction) ? "vertical" : "horizontal",
+      nameStr (direction));
 #endif
   debug (msg);
 
