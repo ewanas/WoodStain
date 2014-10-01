@@ -6,7 +6,7 @@
 int inductionState;
 
 // Vertical distance between each stroke
-#define STROKE_GAP          1000 
+#define STROKE_GAP          10000
 
 // The range within which both sprays work
 // Below MIN only the top spray works
@@ -19,7 +19,7 @@ int inductionState;
 #define MOTOR_SWITCH_DELAY  3000 // Wait 3 seconds after switching off the motor
 
 // Microseconds between each step
-#define STEPPER_DELAY       600  
+#define STEPPER_DELAY       700
 
 // The direction that leads the axel towards the top and bottom
 #define DOWN_DIRECTION      1     
@@ -33,33 +33,34 @@ int inductionState;
 #define STATUS_LED          13
 
 // Solenoid pins
-#define TOP_SPRAY           7
-#define BOTTOM_SPRAY        8
+#define TOP_SPRAY           34
+#define BOTTOM_SPRAY        35
 
 // Induction motor pins
-#define HORIZONTAL_MOTOR_SELECT   10
-#define VERTICAL_MOTOR_SELECT     10
-#define MOTOR_STATE_PIN           11
+#define HORIZONTAL_MOTOR_SELECT   44
+#define VERTICAL_MOTOR_SELECT     48
+#define MOTOR_STATE_PIN           36
 
 // Stepper motor pins
-#define VERTICAL_STEPPER_DIRECTION      11
-#define VERTICAL_STEPPER_STEP           10
-#define VERTICAL_STEPPER_ENABLE         10
-#define HORIZONTAL_STEPPER_DIRECTION    11
-#define HORIZONTAL_STEPPER_STEP         10
-#define HORIZONTAL_STEPPER_ENABLE       10
+#define VERTICAL_STEPPER_DIRECTION      23
+#define VERTICAL_STEPPER_STEP           24
+#define VERTICAL_STEPPER_ENABLE         22
+#define HORIZONTAL_STEPPER_DIRECTION    27
+#define HORIZONTAL_STEPPER_STEP         26
+#define HORIZONTAL_STEPPER_ENABLE       28
 
 // Limit switch pins
-#define TOP_LIMIT           3
-#define BOTTOM_LIMIT        4
-#define LEFT_LIMIT          5
-#define RIGHT_LIMIT         6
+#define TOP_LIMIT           38
+#define BOTTOM_LIMIT        41
+#define LEFT_LIMIT          39
+#define RIGHT_LIMIT         40
+
+#define LED   50
 
 #define __debug__
 
 #ifdef __debug__
 #define assert(c,e) if (!c) { Stop (e); }
-
 #define debug(m) Serial.println (m)
 #else
 #define assert(c,e) {}
@@ -123,8 +124,8 @@ void turnOffMotors () {
  */
 void turnOffSprays () {
   debug ("Turning off both sprays");
-  digitalWrite (TOP_SPRAY, 0);
-  digitalWrite (BOTTOM_SPRAY, 0);
+  digitalWrite (TOP_SPRAY, LOW);
+  digitalWrite (BOTTOM_SPRAY, LOW);
 }
 
 /**

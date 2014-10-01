@@ -90,7 +90,7 @@ inline void go (int direction) {
  */
 void goUntil (int direction) {
 #ifdef __debug__
-  char msg[50];
+  char msg[100];
   sprintf (msg, "Going to the %s end of the machine",
       direction == LEFT ? "left" :
       direction == RIGHT ? "right" :
@@ -134,10 +134,17 @@ void transition (int direction) {
     digitalWrite (HORIZONTAL_STEPPER_ENABLE, LOW);
   }
 
+  static char msg[100];
+  sprintf (msg, "Going %s by %d steps",
+    direction == UP ? "UP" :
+    direction == DOWN ? "DOWN" :
+    direction == LEFT ? "LEFT" : "RIGHT", STROKE_GAP);
+  Serial.println (msg);
   turnOffSprays ();
   for (int i = 0; i < STROKE_GAP; i++) {
     if (digitalRead (limit)) {
-      Stop ("Limit reached before finishing transition!");
+      debug ("Limit reached before finishing transition!");
+      return;
     }
     go (direction);
   }
@@ -287,7 +294,7 @@ void verticalMotor () {
  */
 void doStrokes (int direction) {
 #ifdef __debug__
-  char msg[50];
+  char msg[100];
   sprintf (msg, "Doing %s strokes until the %s limit is reached",
       direction == UP || direction == DOWN ? "horizontal" : "vertical",
       direction == UP ? "top" :
