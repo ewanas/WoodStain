@@ -2,6 +2,7 @@
 #define __WOOD_STAIN_HDR__
 
 #include "Arduino.h"
+#include "pins.h"
 
 int inductionState;
 
