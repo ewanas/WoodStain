@@ -38,23 +38,27 @@ int inductionState;
 #define BOTTOM_SPRAY        35
 
 // Induction motor pins
-#define HORIZONTAL_MOTOR_SELECT   44
-#define VERTICAL_MOTOR_SELECT     48
-#define MOTOR_STATE_PIN           36
+#define HORIZONTAL_SPEED          0
+#define VERTICAL_SPEED            1
+
+#define MOTOR_SPEED               MOT_SPEED_SEL
+#define HORIZONTAL_MOTOR_SELECT   MOT_1_SEL
+#define VERTICAL_MOTOR_SELECT     MOT_2_SEL
+#define MOTOR_STATE_PIN           MOT_PWR
 
 // Stepper motor pins
-#define VERTICAL_STEPPER_DIRECTION      23
-#define VERTICAL_STEPPER_STEP           24
-#define VERTICAL_STEPPER_ENABLE         22
-#define HORIZONTAL_STEPPER_DIRECTION    27
-#define HORIZONTAL_STEPPER_STEP         26
-#define HORIZONTAL_STEPPER_ENABLE       28
+#define VERTICAL_STEPPER_DIRECTION      STP_1_DIR
+#define VERTICAL_STEPPER_STEP           STP_1_STP
+#define VERTICAL_STEPPER_ENABLE         STP_1_EN
+#define HORIZONTAL_STEPPER_DIRECTION    STP_2_DIR
+#define HORIZONTAL_STEPPER_STEP         STP_2_STP
+#define HORIZONTAL_STEPPER_ENABLE       STP_2_EN
 
 // Limit switch pins
-#define TOP_LIMIT           38
-#define BOTTOM_LIMIT        41
-#define LEFT_LIMIT          39
-#define RIGHT_LIMIT         40
+#define TOP_LIMIT           LM_1
+#define BOTTOM_LIMIT        LM_2
+#define LEFT_LIMIT          LM_3
+#define RIGHT_LIMIT         LM_4
 
 #define LED   50
 

@@ -179,12 +179,12 @@ void transition (int direction) {
  */
 int horizontalStrokeWait () {
   debug ("Waiting for a horizontal stroke");
-  char limit = waitPressAnyOfTwo (LEFT_LIMIT, RIGHT_LIMIT);
+  char limit = waitPressHorizontal();
 
   if (limit == LEFT_LIMIT) {
     debug ("Left limit pressed");
 
-    limit = waitPressAnyOfTwo (LEFT_LIMIT, RIGHT_LIMIT);
+    limit = waitPressHorizontal();
 
     if (limit == LEFT_LIMIT) {
       debug ("Left limit pressed again, end point to the right");
@@ -197,7 +197,7 @@ int horizontalStrokeWait () {
   } else {
     debug ("Right limit pressed");
 
-    limit = waitPressAnyOfTwo (LEFT_LIMIT, RIGHT_LIMIT);
+    limit = waitPressHorizontal();
 
     if (limit == RIGHT_LIMIT) {
       debug ("Right limit pressed again, end point to the left");
@@ -252,7 +252,7 @@ void horizontalStroke () {
 int verticalStrokeWait () {
   debug ("Waiting for a vertical stroke");
 
-  int limit = waitPressAnyOfTwo (TOP_LIMIT, BOTTOM_LIMIT);
+  int limit = waitPressVertical();
 
   return (limit == TOP_LIMIT ? BOTTOM_LIMIT : TOP_LIMIT);
 }

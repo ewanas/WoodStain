@@ -1,5 +1,21 @@
 #include "WoodStain.h"
 
+const int verticalLimits[2] = {TOP_LIMIT, BOTTOM_LIMIT};
+const int horizontalLimits[2] = {LEFT_LIMIT, RIGHT_LIMIT};
+
+/**
+ * Waits for any limit switch in a given array to be pressed.
+ */
+unsigned int waitPressAny(const int* pins, unsigned int len) {
+  unsigned int i = 0;
+
+  while(digitalRead(pins[i % len]) == LOW) i++;
+
+  delay(DEBOUNCE_TIME);
+
+  return pins[i % len];
+}
+
 /**
  * Gets the limit switch pin number corresponding to a given direction.
  */
@@ -104,9 +120,9 @@ void waitSecondRelease (int limit) {
  * @return returns the limit switch pin that corresponds to the pressed
  * limit switch after debouncing it.
  */
-int waitPressAnyHorizontal () {
+int waitPressHorizontal() {
   debug ("Waiting for any horizontal limit switch to be pressed");
-  return waitPressAnyOfTwo (LEFT_LIMIT, RIGHT_LIMIT);
+  return waitPressAny(horizontalLimits, 2);
 }
 
 /**
@@ -115,7 +131,7 @@ int waitPressAnyHorizontal () {
  * @return returns the limit switch pin that corresponds to the pressed
  * limit switch after debouncing it.
  */
-int waitPressAnyVertical () {
+int waitPressVertical () {
   debug ("Waiting for any vertical limit switch to be pressed");
-  return waitPressAnyOfTwo (TOP_LIMIT, BOTTOM_LIMIT);
+  return waitPressAny(verticalLimits, 2);
 }
