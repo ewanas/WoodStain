@@ -44,6 +44,33 @@ int getLimit (int direction) {
 }
 
 /**
+ * Gets the direction for a limit switch.
+ */
+int getDirection (int limit) {
+  int direction;
+
+  switch(limit) {
+    case LEFT_LIMIT:
+      direction = LEFT;
+      break;
+    case RIGHT_LIMIT:
+      direction = RIGHT;
+      break;
+    case BOTTOM_LIMIT:
+      direction = DOWN;
+      break;
+    case TOP_LIMIT:
+      direction = UP;
+      break;
+    default:
+      Stop("Error in getting direction for limit switch...");
+      break;
+  }
+
+  return direction;
+}
+
+/**
  * This waits for any limit switch to be pressed from the two given
  * limit switches.
  *
@@ -97,8 +124,8 @@ void waitRelease (int limit) {
  * @param limit is the limit switch pin number
  */
 void waitPress (int limit) {
-  assert (!digitalRead (limit),
-      "Waiting for a pressed button to be pressed...Stopping");
+  /* assert (!digitalRead (limit),
+      "Waiting for a pressed button to be pressed...Stopping"); */
 
   while (!digitalRead (limit));
   delay (DEBOUNCE_TIME);

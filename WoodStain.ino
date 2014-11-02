@@ -122,12 +122,6 @@ void goUntil (int direction) {
   debug (msg);
   int limit = getLimit (direction);
 
-  if (isVertical (direction)) {
-    digitalWrite (VERTICAL_STEPPER_ENABLE, LOW);
-  } else {
-    digitalWrite (HORIZONTAL_STEPPER_ENABLE, LOW);
-  }
-
   while (!digitalRead (limit)) {
     go (direction);
   }
@@ -146,20 +140,7 @@ void transition (int direction) {
   sprintf (msg, "Going %s by %d steps", nameStr (direction), STROKE_GAP);
   debug (msg);
 #endif
-
-  assert (isVertical (direction) && inductionState == HORIZONTAL,
-      "Transitioning vertically while the vertical induction motor is on"
-      );
-  assert (!isVertical(direction) && inductionState == VERTICAL,
-      "Transitioning horizontally while the horizontal direction motor is on"
-      );
   int limit = getLimit (direction);
-
-  if (isVertical (direction)) {
-    digitalWrite (VERTICAL_STEPPER_ENABLE, LOW);
-  } else {
-    digitalWrite (HORIZONTAL_STEPPER_ENABLE, LOW);
-  }
 
   turnOffSprays ();
   for (int i = 0; i < STROKE_GAP; i++) {
@@ -183,30 +164,12 @@ int horizontalStrokeWait () {
 
   if (limit == LEFT_LIMIT) {
     debug ("Left limit pressed");
-
-    limit = waitPressHorizontal();
-
-    if (limit == LEFT_LIMIT) {
-      debug ("Left limit pressed again, end point to the right");
-      return RIGHT_LIMIT;
-    } else {
-      waitSecondRelease (RIGHT_LIMIT);
-      debug ("Right limit pressed twice, end point to the left");
-      return LEFT_LIMIT;
-    }
+    debug ("Going to the right...");
+    return RIGHT_LIMIT;
   } else {
     debug ("Right limit pressed");
-
-    limit = waitPressHorizontal();
-
-    if (limit == RIGHT_LIMIT) {
-      debug ("Right limit pressed again, end point to the left");
-      return LEFT_LIMIT;
-    } else {
-      waitSecondRelease (LEFT_LIMIT);
-      debug ("Left limit pressed twice, end point to the right");
-      return RIGHT_LIMIT;
-    }
+    debug ("Going to the left");
+    return LEFT_LIMIT;
   }
 }
 
@@ -236,6 +199,8 @@ void horizontalStroke () {
     debug ("Going to the right end point");
   }
 
+  goUntil(getDirection(endPoint));
+
   waitPress (endPoint);
 
   turnOffSprays ();
@@ -251,10 +216,17 @@ void horizontalStroke () {
  */
 int verticalStrokeWait () {
   debug ("Waiting for a vertical stroke");
+  char limit = waitPressVertical();
 
-  int limit = waitPressVertical();
-
-  return (limit == TOP_LIMIT ? BOTTOM_LIMIT : TOP_LIMIT);
+  if (limit == BOTTOM_LIMIT) {
+    debug ("Bottom limit pressed");
+    debug ("Going to the top...");
+    return TOP_LIMIT;
+  } else {
+    debug ("Top limit pressed");
+    debug ("Going to the bottom...");
+    return BOTTOM_LIMIT;
+  }
 }
 
 /**
@@ -263,51 +235,33 @@ int verticalStrokeWait () {
 void verticalStroke () {
   static int strokeCount = 0;
 
-  int limit = verticalStrokeWait ();
+  int endPoint = verticalStrokeWait ();
 
-  bothSprays ();
-  waitPress (limit);
+  // Turn on the appropriate solenoids based on which stroke
+  // is currently being drawn
+  if (strokeCount >= MIN && strokeCount <= MAX) {
+    bothSprays ();
+  } else if (strokeCount < MIN) {
+    topSpray ();
+  } else if (strokeCount > MAX) {
+    bottomSpray ();
+  }
+
+  if (endPoint == TOP_LIMIT) {
+    debug ("Going to the bottom end point");
+  } else {
+    debug ("Going to the top end point");
+  }
+
+  goUntil(getDirection(endPoint));
+
+  waitPress (endPoint);
+
   turnOffSprays ();
 
   strokeCount++;
-}
 
-/**
- * Turns on the horizontal induction motor and turning off the vertical.
- */
-void horizontalMotor () {
-  debug ("Turning on only the horizontal induction motor");
-
-  digitalWrite (MOTOR_STATE_PIN, LOW);
-  digitalWrite (HORIZONTAL_STEPPER_ENABLE, HIGH);
-
-  delay (MOTOR_SWITCH_DELAY);
-
-  digitalWrite (VERTICAL_MOTOR_SELECT, LOW);
-  digitalWrite (HORIZONTAL_MOTOR_SELECT, HIGH);
-
-  digitalWrite (MOTOR_STATE_PIN, HIGH);
-
-  inductionState = HORIZONTAL;
-}
-
-/**
- * Turning on the vertical induction motor and turning on the horizontal.
- */
-void verticalMotor () {
-  debug ("Turning on only the vertical induction motor");
-
-  digitalWrite (MOTOR_STATE_PIN, LOW);
-  digitalWrite (VERTICAL_STEPPER_ENABLE, HIGH);
-
-  delay (MOTOR_SWITCH_DELAY);
-
-  digitalWrite (HORIZONTAL_MOTOR_SELECT, LOW);
-  digitalWrite (VERTICAL_MOTOR_SELECT, HIGH);
-
-  digitalWrite (MOTOR_STATE_PIN, HIGH);
-
-  inductionState = VERTICAL;
+  debug ("Done spraying vertically...");
 }
 
 /**
@@ -405,7 +359,6 @@ void loop () {
   debug ("Reached the bottom! Done resetting");
 
   // Do horizontal strokes
-  horizontalMotor ();
   doStrokes(UP);
 
   // Reset horizontally
@@ -414,7 +367,6 @@ void loop () {
   debug ("Reached the left! Done resetting");
 
   // Do vertical strokes
-  verticalMotor ();
   doStrokes (RIGHT);
 
   // Hang indefinitely

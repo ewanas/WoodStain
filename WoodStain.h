@@ -7,7 +7,9 @@
 int inductionState;
 
 // Vertical distance between each stroke
-#define STROKE_GAP          10000
+#define STROKE_GAP          3000
+#define HORIZONTAL_STROKE_GAP 3000
+#define VERTICAL_STROKE_GAP 3000
 
 // The range within which both sprays work
 // Below MIN only the top spray works
@@ -21,6 +23,8 @@ int inductionState;
 
 // Microseconds between each step
 #define STEPPER_DELAY       700
+#define HORIZONTAL_STEPPER_DELAY    90
+#define VERTICAL_STEPPER_DELAY      700
 
 // The direction that leads the axel towards the top and bottom
 #define DOWN_DIRECTION      1     
@@ -55,10 +59,10 @@ int inductionState;
 #define HORIZONTAL_STEPPER_ENABLE       STP_2_EN
 
 // Limit switch pins
-#define TOP_LIMIT           LM_1
-#define BOTTOM_LIMIT        LM_2
-#define LEFT_LIMIT          LM_3
-#define RIGHT_LIMIT         LM_4
+#define TOP_LIMIT           LM_4
+#define BOTTOM_LIMIT        LM_3
+#define LEFT_LIMIT          LM_1
+#define RIGHT_LIMIT         LM_2
 
 #define LED   50
 
@@ -74,27 +78,27 @@ int inductionState;
 
 #define goDown digitalWrite(VERTICAL_STEPPER_DIRECTION, DOWN_DIRECTION);\
                 digitalWrite(VERTICAL_STEPPER_STEP, 1);\
-                delayMicroseconds(STEPPER_DELAY);\
+                delayMicroseconds(VERTICAL_STEPPER_DELAY);\
                 digitalWrite(VERTICAL_STEPPER_STEP, 0);\
-                delayMicroseconds(STEPPER_DELAY);
+                delayMicroseconds(VERTICAL_STEPPER_DELAY);
 
 #define goUp digitalWrite(VERTICAL_STEPPER_DIRECTION, UP_DIRECTION);\
                 digitalWrite(VERTICAL_STEPPER_STEP, 1);\
-                delayMicroseconds(STEPPER_DELAY);\
+                delayMicroseconds(VERTICAL_STEPPER_DELAY);\
                 digitalWrite(VERTICAL_STEPPER_STEP, 0);\
-                delayMicroseconds(STEPPER_DELAY);
+                delayMicroseconds(VERTICAL_STEPPER_DELAY);
 
 #define goLeft digitalWrite(HORIZONTAL_STEPPER_DIRECTION, LEFT_DIRECTION);\
                 digitalWrite(HORIZONTAL_STEPPER_STEP, 1);\
-                delayMicroseconds(STEPPER_DELAY);\
+                delayMicroseconds(HORIZONTAL_STEPPER_DELAY);\
                 digitalWrite(HORIZONTAL_STEPPER_STEP, 0);\
-                delayMicroseconds(STEPPER_DELAY);
+                delayMicroseconds(HORIZONTAL_STEPPER_DELAY);
 
 #define goRight digitalWrite(HORIZONTAL_STEPPER_DIRECTION, RIGHT_DIRECTION);\
                 digitalWrite(HORIZONTAL_STEPPER_STEP, 1);\
-                delayMicroseconds(STEPPER_DELAY);\
+                delayMicroseconds(HORIZONTAL_STEPPER_DELAY);\
                 digitalWrite(HORIZONTAL_STEPPER_STEP, 0);\
-                delayMicroseconds(STEPPER_DELAY);
+                delayMicroseconds(HORIZONTAL_STEPPER_DELAY);
 
 #define UP      0
 #define DOWN    1
