@@ -6,6 +6,9 @@
 
 int inductionState;
 
+#define VERTICAL    0
+#define HORIZONTAL  1
+
 // Vertical distance between each stroke
 #define STROKE_GAP          3000
 #define HORIZONTAL_STROKE_GAP 3000

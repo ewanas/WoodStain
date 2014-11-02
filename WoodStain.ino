@@ -64,6 +64,12 @@
 #include "limits.h"
 #include "sprays.h"
 
+struct {
+  int vertical;
+  int horizontal;
+} strokes;
+
+
 /**
  * Returns whether a direction is vertical
  */
@@ -178,25 +184,36 @@ int horizontalStrokeWait () {
  * Otherwise, if the stroke is less than MIN, spray only the BOTTOM_SPRAY
  *            if the stroke is greater than MAX, spray only the TOP_SPRAY
  */
-void horizontalStroke () {
-  static int strokeCount = 0;
-
-  int endPoint = horizontalStrokeWait ();
+void stroke (int axis) {
+  int* strokeCount = (axis == VERTICAL ? &(strokes.vertical) : &(strokes.horizontal));
+  int endPoint = (axis == VERTICAL ? verticalStrokeWait() : horizontalStrokeWait ());
 
   // Turn on the appropriate solenoids based on which stroke
   // is currently being drawn
-  if (strokeCount >= MIN && strokeCount <= MAX) {
+  if (*strokeCount >= MIN && *strokeCount <= MAX) {
     bothSprays ();
-  } else if (strokeCount < MIN) {
+  } else if (*strokeCount < MIN) {
     topSpray ();
-  } else if (strokeCount > MAX) {
+  } else if (*strokeCount > MAX) {
     bottomSpray ();
   }
 
-  if (endPoint == LEFT_LIMIT) {
-    debug ("Going to the left end point");
+  if(isVertical(getDirection(endPoint))) {
+    if(endPoint == TOP_LIMIT) {
+      debug ("Going to the top end point");
+    } else if(endPoint == BOTTOM_LIMIT) {
+      debug ("Going to the bottom end point");
+    } else {
+      Stop ("Going to a horizontal limit switch while doing a vertical stroke");
+    }
   } else {
-    debug ("Going to the right end point");
+    if (endPoint == LEFT_LIMIT) {
+      debug ("Going to the left end point");
+    } else if (endPoint == RIGHT_LIMIT) {
+      debug ("Going to the right end point");
+    } else {
+      Stop ("Going to a vertical limit switch while doing a horizontal stroke");
+    }
   }
 
   goUntil(getDirection(endPoint));
@@ -205,9 +222,9 @@ void horizontalStroke () {
 
   turnOffSprays ();
 
-  strokeCount++;
+  *strokeCount++;
 
-  debug ("Done spraying horizontally...");
+  debug ("Done spraying...");
 }
 
 /**
@@ -230,41 +247,6 @@ int verticalStrokeWait () {
 }
 
 /**
- * Does a vertical stroke.
- */
-void verticalStroke () {
-  static int strokeCount = 0;
-
-  int endPoint = verticalStrokeWait ();
-
-  // Turn on the appropriate solenoids based on which stroke
-  // is currently being drawn
-  if (strokeCount >= MIN && strokeCount <= MAX) {
-    bothSprays ();
-  } else if (strokeCount < MIN) {
-    topSpray ();
-  } else if (strokeCount > MAX) {
-    bottomSpray ();
-  }
-
-  if (endPoint == TOP_LIMIT) {
-    debug ("Going to the bottom end point");
-  } else {
-    debug ("Going to the top end point");
-  }
-
-  goUntil(getDirection(endPoint));
-
-  waitPress (endPoint);
-
-  turnOffSprays ();
-
-  strokeCount++;
-
-  debug ("Done spraying vertically...");
-}
-
-/**
  * Does strokes perpendicular to the given direction.
  */
 void doStrokes (int direction) {
@@ -283,25 +265,25 @@ void doStrokes (int direction) {
   switch (direction) {
     case UP:
       while (!digitalRead (limit)) {
-        horizontalStroke ();
+        stroke(HORIZONTAL);
         transition (UP);
       }
       break;
     case DOWN:
       while (!digitalRead (limit)) {
-        horizontalStroke ();
+        stroke(HORIZONTAL);
         transition (DOWN);
       }
       break;
     case LEFT:
       while (!digitalRead (limit)) {
-        verticalStroke ();
+        stroke(VERTICAL);
         transition (LEFT);
       }
       break;
     case RIGHT:
       while (!digitalRead (limit)) {
-        verticalStroke ();
+        stroke(VERTICAL);
         transition (RIGHT);
       }
       break;
