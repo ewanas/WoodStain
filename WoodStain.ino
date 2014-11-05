@@ -198,24 +198,6 @@ void stroke (int axis) {
     bottomSpray ();
   }
 
-  if(isVertical(getDirection(endPoint))) {
-    if(endPoint == TOP_LIMIT) {
-      debug ("Going to the top end point");
-    } else if(endPoint == BOTTOM_LIMIT) {
-      debug ("Going to the bottom end point");
-    } else {
-      Stop ("Going to a horizontal limit switch while doing a vertical stroke");
-    }
-  } else {
-    if (endPoint == LEFT_LIMIT) {
-      debug ("Going to the left end point");
-    } else if (endPoint == RIGHT_LIMIT) {
-      debug ("Going to the right end point");
-    } else {
-      Stop ("Going to a vertical limit switch while doing a horizontal stroke");
-    }
-  }
-
   goUntil(getDirection(endPoint));
 
   waitPress (endPoint);
