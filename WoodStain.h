@@ -17,24 +17,24 @@ int inductionState;
 // The range within which both sprays work
 // Below MIN only the top spray works
 // Above MAX only the bottom spray works
-#define MIN                 2     
-#define MAX                 15    
+#define MIN                 2
+#define MAX                 15
 
 // Milliseconds to wait after a change in limit switch state
-#define DEBOUNCE_TIME       150   
+#define DEBOUNCE_TIME       150
 #define MOTOR_SWITCH_DELAY  3000 // Wait 3 seconds after switching off the motor
 
 // Microseconds between each step
 #define STEPPER_DELAY       700
-#define HORIZONTAL_STEPPER_DELAY    90
-#define VERTICAL_STEPPER_DELAY      700
+#define HORIZONTAL_STEPPER_DELAY    300
+#define VERTICAL_STEPPER_DELAY      300
 
 // The direction that leads the axel towards the top and bottom
-#define DOWN_DIRECTION      1     
-#define UP_DIRECTION        0
+#define DOWN_DIRECTION      0
+#define UP_DIRECTION        1
 
 // The directions that lead the paint head towards the left and right
-#define LEFT_DIRECTION      1     
+#define LEFT_DIRECTION      1
 #define RIGHT_DIRECTION     0
 
 // Indicator LED pin
@@ -54,18 +54,18 @@ int inductionState;
 #define MOTOR_STATE_PIN           MOT_PWR
 
 // Stepper motor pins
-#define VERTICAL_STEPPER_DIRECTION      STP_1_DIR
-#define VERTICAL_STEPPER_STEP           STP_1_STP
-#define VERTICAL_STEPPER_ENABLE         STP_1_EN
-#define HORIZONTAL_STEPPER_DIRECTION    STP_2_DIR
-#define HORIZONTAL_STEPPER_STEP         STP_2_STP
-#define HORIZONTAL_STEPPER_ENABLE       STP_2_EN
+#define VERTICAL_STEPPER_DIRECTION      STP_2_DIR
+#define VERTICAL_STEPPER_STEP           STP_2_STP
+#define VERTICAL_STEPPER_ENABLE         STP_2_EN
+#define HORIZONTAL_STEPPER_DIRECTION    STP_1_DIR
+#define HORIZONTAL_STEPPER_STEP         STP_1_STP
+#define HORIZONTAL_STEPPER_ENABLE       STP_1_EN
 
 // Limit switch pins
-#define TOP_LIMIT           LM_4
-#define BOTTOM_LIMIT        LM_3
+#define TOP_LIMIT           LM_2
+#define BOTTOM_LIMIT        LM_4
 #define LEFT_LIMIT          LM_1
-#define RIGHT_LIMIT         LM_2
+#define RIGHT_LIMIT         LM_3
 
 #define LED   50
 
@@ -123,8 +123,8 @@ void turnOffMotors () {
   digitalWrite (HORIZONTAL_MOTOR_SELECT, LOW);
   digitalWrite (VERTICAL_MOTOR_SELECT, LOW);
 
-  digitalWrite (HORIZONTAL_STEPPER_ENABLE, HIGH);
-  digitalWrite (VERTICAL_STEPPER_ENABLE, HIGH);
+  // digitalWrite (HORIZONTAL_STEPPER_ENABLE, HIGH);
+  // digitalWrite (VERTICAL_STEPPER_ENABLE, HIGH);
 
   delay (MOTOR_SWITCH_DELAY);
 
