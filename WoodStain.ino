@@ -10,6 +10,19 @@ struct {
   int horizontal;
 } strokes;
 
+typedef struct {
+  int min;
+  int max;
+  int stepsToStart;
+} Profile;
+
+const Profile verticalProfile = {VERTICAL_STEPPER_MIN_DELAY,
+  VERTICAL_STEPPER_MAX_DELAY,
+  VERTICAL_STEPPER_START_GAP};
+
+const Profile horizontalProfile = {HORIZONTAL_STEPPER_MIN_DELAY,
+  HORIZONTAL_STEPPER_MAX_DELAY,
+  HORIZONTAL_STEPPER_START_GAP};
 
 /**
  * Returns whether a direction is vertical
@@ -39,39 +52,87 @@ const char* nameStr (int direction) {
 /**
  * Take one step in a given direction.
  */
-inline void go (int direction) {
+inline void go (int direction, long delay) {
   switch (direction) {
     case LEFT:
-      goLeft;
+      goLeft(delay);
       break;
     case RIGHT:
-      goRight;
+      goRight(delay);
       break;
     case UP:
-      goUp;
+      goUp(delay);
       break;
     case DOWN:
-      goDown;
+      goDown(delay);
       break;
   }
 }
 
 /**
  * Keeps moving in the given direction until the direction's limit switch is
- * pressed.
+ * pressed if steps == LIMIT
+ * Otherwise move until one of the following events occur:
+ *  The limit switch in that direction is pressed
+ *  The number of steps has been done
  */
-void goUntil (int direction) {
+void goUntil (int direction, int steps) {
 #ifdef __debug__
   char msg[100];
-  sprintf (msg, "Going to the %s end of the machine", extremeStr (direction));
+  if(steps == LIMIT)
+    sprintf (msg, "Going to the %s end of the machine", extremeStr (direction));
+  else
+    sprintf (msg, "Going %d steps in the %s direction", steps, nameStr (direction));
 #endif
 
   debug (msg);
   int limit = getLimit (direction);
 
-  while (!digitalRead (limit)) {
-    go (direction);
+  Profile p = isVertical(direction) ? verticalProfile : horizontalProfile;
+
+  if (isVertical (direction)) {
+    verticalOn;
+  } else {
+    horizontalOn;
   }
+
+  int decrement = (p.max - p.min) / p.stepsToStart;
+  int mot_delay = p.max;
+
+  int stepsSoFar = 0;
+
+  while (!digitalRead (limit) && stepsSoFar < p.stepsToStart) {
+    if(steps != LIMIT) {
+      if (stepsSoFar > steps) break;
+    }
+
+    go (direction, mot_delay);
+    if (mot_delay > p.min) {
+      if(mot_delay - decrement >= p.min)
+        mot_delay -= decrement;
+      else {
+        mot_delay = p.min;
+      }
+    }
+    stepsSoFar++;
+  }
+
+
+  while (!digitalRead (limit)) {
+    if(steps != LIMIT) {
+      if (stepsSoFar > steps) break;
+    }
+
+    go (direction, mot_delay);
+    stepsSoFar++;
+  }
+
+  if (isVertical (direction)) verticalOff else horizontalOff;
+
+  delay(MOTOR_REST);
+
+  horizontalOn;
+  verticalOn;
 
   delay(DEBOUNCE_TIME);
 }
@@ -90,13 +151,11 @@ void transition (int direction) {
   int limit = getLimit (direction);
 
   turnOffSprays ();
-  for (int i = 0; i < STROKE_GAP; i++) {
-    if (digitalRead (limit)) {
-      debug ("Limit reached before finishing transition!");
-      return;
-    }
-    go (direction);
-  }
+  goUntil(direction,
+      (isVertical(direction) ?
+       VERTICAL_STROKE_GAP :
+       HORIZONTAL_STEPPER_START_GAP)
+      );
 }
 
 /**
@@ -139,7 +198,7 @@ void stroke (int axis) {
     bottomSpray ();
   }
 
-  goUntil(getDirection(endPoint));
+  goUntil(getDirection(endPoint), LIMIT);
 
   waitPress (endPoint);
 
@@ -238,6 +297,10 @@ void setup () {
   pinMode (VERTICAL_STEPPER_STEP, OUTPUT);
   pinMode (VERTICAL_STEPPER_ENABLE, OUTPUT);
 
+  pinMode (VERTICAL_STEPPER_DIRECTION_2, OUTPUT);
+  pinMode (VERTICAL_STEPPER_STEP_2, OUTPUT);
+  pinMode (VERTICAL_STEPPER_ENABLE_2, OUTPUT);
+
   pinMode (HORIZONTAL_MOTOR_SELECT, OUTPUT);
   pinMode (VERTICAL_MOTOR_SELECT, OUTPUT);
   pinMode (MOTOR_STATE_PIN, OUTPUT);
@@ -260,7 +323,8 @@ void setup () {
 void loop () {
   // Reset vertically
   turnOffAll ();
-  goUntil (DOWN);
+  goUntil (DOWN, LIMIT);
+  goUntil (LEFT, LIMIT);
   debug ("Reached the bottom! Done resetting");
 
   // Do horizontal strokes
@@ -268,7 +332,8 @@ void loop () {
 
   // Reset horizontally
   turnOffAll ();
-  goUntil (LEFT);
+  goUntil (LEFT, LIMIT);
+  goUntil (UP, LIMIT);
   debug ("Reached the left! Done resetting");
 
   // Do vertical strokes
