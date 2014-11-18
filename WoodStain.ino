@@ -96,8 +96,9 @@ void goUntil (int direction, int steps) {
     horizontalOn;
   }
 
-  int decrement = (p.max - p.min) / p.stepsToStart;
-  int mot_delay = p.max;
+  float decrement = (float)(p.max - p.min) / (float)p.stepsToStart;
+  Serial.println (decrement);
+  float mot_delay = (float)p.max;
 
   int stepsSoFar = 0;
 
@@ -106,7 +107,7 @@ void goUntil (int direction, int steps) {
       if (stepsSoFar > steps) break;
     }
 
-    go (direction, mot_delay);
+    go (direction, (int)mot_delay);
     if (mot_delay > p.min) {
       if(mot_delay - decrement >= p.min)
         mot_delay -= decrement;
@@ -154,7 +155,7 @@ void transition (int direction) {
   goUntil(direction,
       (isVertical(direction) ?
        VERTICAL_STROKE_GAP :
-       HORIZONTAL_STEPPER_START_GAP)
+       HORIZONTAL_STROKE_GAP)
       );
 }
 
@@ -284,7 +285,7 @@ void doStrokes (int direction) {
  *    Right limit switch
  */
 void setup () {
-  Serial.begin (9600);
+  // Serial.begin (9600);
 
   pinMode (TOP_SPRAY, OUTPUT);
   pinMode (BOTTOM_SPRAY, OUTPUT);
@@ -322,7 +323,7 @@ void setup () {
  */
 void loop () {
   // Reset vertically
-  turnOffAll ();
+  /* turnOffAll ();
   goUntil (DOWN, LIMIT);
   goUntil (LEFT, LIMIT);
   debug ("Reached the bottom! Done resetting");
@@ -337,8 +338,14 @@ void loop () {
   debug ("Reached the left! Done resetting");
 
   // Do vertical strokes
-  doStrokes (RIGHT);
+  doStrokes (RIGHT); */
+
+  goUntil (DOWN, LIMIT);
+  goUntil (UP, LIMIT);
+
+  // goUntil (LEFT, LIMIT);
+  // goUntil (RIGHT, LIMIT);
 
   // Hang indefinitely
-  Stop ("Done painting!");
+  // Stop ("Done painting!");
 }

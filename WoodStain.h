@@ -28,18 +28,18 @@ int inductionState;
 #define MOTOR_SWITCH_DELAY  3000 // Wait 3 seconds after switching off the motor
 
 // Microseconds between each step
-#define HORIZONTAL_STEPPER_MIN_DELAY  1000
+#define HORIZONTAL_STEPPER_MIN_DELAY  150
 #define VERTICAL_STEPPER_MIN_DELAY    100
 
-#define HORIZONTAL_STEPPER_MAX_DELAY  1000
-#define VERTICAL_STEPPER_MAX_DELAY    100
+#define HORIZONTAL_STEPPER_MAX_DELAY  1600
+#define VERTICAL_STEPPER_MAX_DELAY    1000
 
-#define HORIZONTAL_STEPPER_START_GAP  1000
-#define VERTICAL_STEPPER_START_GAP    100
+#define HORIZONTAL_STEPPER_START_GAP  600
+#define VERTICAL_STEPPER_START_GAP    1200
 
 // The direction that leads the axel towards the top and bottom
-#define DOWN_DIRECTION      0
-#define UP_DIRECTION        1
+#define DOWN_DIRECTION      1
+#define UP_DIRECTION        0
 
 // The directions that lead the paint head towards the left and right
 #define LEFT_DIRECTION      1
@@ -77,12 +77,12 @@ int inductionState;
 // Limit switch pins
 #define TOP_LIMIT           LM_1
 #define BOTTOM_LIMIT        LM_4
-#define LEFT_LIMIT          LM_2
-#define RIGHT_LIMIT         LM_3
+#define LEFT_LIMIT          LM_3
+#define RIGHT_LIMIT         LM_2
 
 #define LED   50
 
-#define __debug__
+//#define __debug__
 
 #ifdef __debug__
 #define assert(c,e) if (!c) { Stop (e); }
