@@ -82,34 +82,6 @@ int inductionState;
 
 #define LED   50
 
-//#define __debug__
-
-#ifdef __debug__
-#define assert(c,e) if (!c) { Stop (e); }
-#define debug(m) Serial.println (m)
-#else
-#define assert(c,e) {}
-#define debug(m) {}
-#endif
-
-#define goDown(delay) digitalWrite(VERTICAL_STEPPER_DIRECTION, DOWN_DIRECTION);\
-                digitalWrite(VERTICAL_STEPPER_DIRECTION_2, UP_DIRECTION);\
-                digitalWrite(VERTICAL_STEPPER_STEP, 1);\
-                digitalWrite(VERTICAL_STEPPER_STEP_2, 1);\
-                delayMicroseconds(delay);\
-                digitalWrite(VERTICAL_STEPPER_STEP, 0);\
-                digitalWrite(VERTICAL_STEPPER_STEP_2, 0);\
-                delayMicroseconds(delay);
-
-#define goUp(delay) digitalWrite(VERTICAL_STEPPER_DIRECTION, UP_DIRECTION);\
-                digitalWrite(VERTICAL_STEPPER_DIRECTION_2, DOWN_DIRECTION);\
-                digitalWrite(VERTICAL_STEPPER_STEP, 1);\
-                digitalWrite(VERTICAL_STEPPER_STEP_2, 1);\
-                delayMicroseconds(delay);\
-                digitalWrite(VERTICAL_STEPPER_STEP, 0);\
-                digitalWrite(VERTICAL_STEPPER_STEP_2, 0);\
-                delayMicroseconds(delay);
-
 #define goLeft(delay) digitalWrite(HORIZONTAL_STEPPER_DIRECTION, LEFT_DIRECTION);\
                 digitalWrite(HORIZONTAL_STEPPER_STEP, 1);\
                 delayMicroseconds(delay);\
@@ -138,59 +110,5 @@ int inductionState;
 #define HORIZONTAL  0
 #define VERTICAL    1
 #define NONE        2
-
-/**
- * Turns off both motors and updates the motor states.
- */
-void turnOffMotors () {
-  debug ("Turning off both induction motors");
-
-  digitalWrite (MOTOR_STATE_PIN, LOW);
-
-  digitalWrite (HORIZONTAL_MOTOR_SELECT, LOW);
-  digitalWrite (VERTICAL_MOTOR_SELECT, LOW);
-
-  // digitalWrite (HORIZONTAL_STEPPER_ENABLE, HIGH);
-  // digitalWrite (VERTICAL_STEPPER_ENABLE, HIGH);
-
-  delay (MOTOR_SWITCH_DELAY);
-
-  inductionState = NONE;
-}
-
-/**
- * Turns off both spray guns.
- */
-void turnOffSprays () {
-  debug ("Turning off both sprays");
-  digitalWrite (TOP_SPRAY, LOW);
-  digitalWrite (BOTTOM_SPRAY, LOW);
-}
-
-/**
- * Turns off all the sprays and the stroke motor.
- */
-void turnOffAll() {
-  debug ("Shutting down sprays and stroke motors");
-
-  turnOffMotors ();
-  turnOffSprays ();
-}
-
-/**
- * Stops the paint program and displays the reason for stopping.
- */
-void Stop (const char* reason) {
-  debug (reason);
-  turnOffAll ();
-
-  // Hang and blink the status LED
-  while (1) {
-    digitalWrite (STATUS_LED, HIGH);
-    delay (300);
-    digitalWrite (STATUS_LED, LOW);
-    delay (300);
-  }
-}
 
 #endif

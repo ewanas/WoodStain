@@ -4,6 +4,7 @@
 
 #include "limits.h"
 #include "sprays.h"
+#include "controls.h"
 
 struct {
   int vertical;
@@ -32,24 +33,6 @@ int isVertical(int direction) {
 }
 
 /**
- * Returns the extreme string representation of a direction.
- */
-const char* extremeStr (int direction) {
-  return direction == UP ? "top" :
-          direction == DOWN ? "bottom" :
-          direction == LEFT ? "leftmost" : "rightmost";
-}
-
-/**
- * Direction names.
- */
-const char* nameStr (int direction) {
-  return direction == UP ? "up" :
-          direction == DOWN ? "down" :
-          direction == LEFT ? "left" : "right";
-}
-
-/**
  * Take one step in a given direction.
  */
 inline void go (int direction, long delay) {
@@ -61,10 +44,10 @@ inline void go (int direction, long delay) {
       goRight(delay);
       break;
     case UP:
-      goUp(delay);
+      // TODO goUp(delay);
       break;
     case DOWN:
-      goDown(delay);
+      // TODO goDown(delay);
       break;
   }
 }

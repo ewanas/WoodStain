@@ -1,4 +1,14 @@
+#ifndef __LIMITS_HDR__
+#define __LIMITS_HDR__
+
 #include "WoodStain.h"
+#include "debug.h"
+// #include "controls.h"
+// #include "limits.h"
+
+extern "C" {
+	void Stop(char*);
+}
 
 const int verticalLimits[2] = {TOP_LIMIT, BOTTOM_LIMIT};
 const int horizontalLimits[2] = {LEFT_LIMIT, RIGHT_LIMIT};
@@ -162,3 +172,5 @@ int waitPressVertical () {
   debug ("Waiting for any vertical limit switch to be pressed");
   return waitPressAny(verticalLimits, 2);
 }
+
+#endif
