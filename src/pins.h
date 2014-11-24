@@ -18,9 +18,9 @@
 
 #define MOT_1_SEL 48
 #define MOT_2_SEL 44
-#define MOT_SPEED_SEL 7
 
-#define MOT_PWR   36
+#define MOTOR_UP    7
+#define MOTOR_DOWN  36
 
 #define STP_1_EN  24
 #define STP_1_DIR 23

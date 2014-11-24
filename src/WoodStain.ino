@@ -17,9 +17,7 @@ typedef struct {
   int stepsToStart;
 } Profile;
 
-const Profile verticalProfile = {VERTICAL_STEPPER_MIN_DELAY,
-  VERTICAL_STEPPER_MAX_DELAY,
-  VERTICAL_STEPPER_START_GAP};
+volatile int verticalCounter;
 
 const Profile horizontalProfile = {HORIZONTAL_STEPPER_MIN_DELAY,
   HORIZONTAL_STEPPER_MAX_DELAY,
@@ -44,12 +42,47 @@ inline void go (int direction, long delay) {
       goRight(delay);
       break;
     case UP:
+      Stop ("Going up with old functionality...");
       // TODO goUp(delay);
       break;
     case DOWN:
+      Stop ("Going down with old functionality...");
       // TODO goDown(delay);
       break;
   }
+}
+
+void stopVertical () {
+  digitalWrite (MOTOR_UP, LOW);
+  digitalWrite (MOTOR_DOWN, LOW);
+}
+
+void goVertical (int direction) {
+  if (direction == UP) {
+    digitalWrite (MOTOR_DOWN, LOW);
+    digitalWrite (MOTOR_UP, HIGH);
+  } else {
+    digitalWrite (MOTOR_UP, LOW);
+    digitalWrite (MOTOR_DOWN, HIGH);
+  }
+}
+
+void goUntilVertical (int direction, int steps) {
+  int limit = getDirection (limit);
+
+  if (steps == LIMIT) {
+    goVertical (direction);
+    while (!digitalRead (limit));
+    delay (DEBOUNCE_TIME);
+    stopVertical ();
+  } else {
+    verticalCounter = 0;
+    goVertical (direction);
+    while (verticalCounter < steps && !digitalRead (limit));
+    stopVertical ();
+  }
+
+  delay (MOTOR_REST);
 }
 
 /**
@@ -71,13 +104,13 @@ void goUntil (int direction, int steps) {
   debug (msg);
   int limit = getLimit (direction);
 
-  Profile p = isVertical(direction) ? verticalProfile : horizontalProfile;
-
   if (isVertical (direction)) {
-    verticalOn;
-  } else {
-    horizontalOn;
+    return goUntilVertical (direction, steps);
   }
+
+  Profile p = horizontalProfile;
+
+  horizontalOn;
 
   float decrement = (float)(p.max - p.min) / (float)p.stepsToStart;
   Serial.println (decrement);
@@ -111,12 +144,11 @@ void goUntil (int direction, int steps) {
     stepsSoFar++;
   }
 
-  if (isVertical (direction)) verticalOff else horizontalOff;
+  horizontalOff;
 
   delay(MOTOR_REST);
 
   horizontalOn;
-  verticalOn;
 
   delay(DEBOUNCE_TIME);
 }
@@ -268,7 +300,8 @@ void doStrokes (int direction) {
  *    Right limit switch
  */
 void setup () {
-  // Serial.begin (9600);
+  Serial.begin (9600);
+  verticalCounter = 0;
 
   pinMode (TOP_SPRAY, OUTPUT);
   pinMode (BOTTOM_SPRAY, OUTPUT);
@@ -277,17 +310,8 @@ void setup () {
   pinMode (HORIZONTAL_STEPPER_STEP, OUTPUT);
   pinMode (HORIZONTAL_STEPPER_ENABLE, OUTPUT);
 
-  pinMode (VERTICAL_STEPPER_DIRECTION, OUTPUT);
-  pinMode (VERTICAL_STEPPER_STEP, OUTPUT);
-  pinMode (VERTICAL_STEPPER_ENABLE, OUTPUT);
-
-  pinMode (VERTICAL_STEPPER_DIRECTION_2, OUTPUT);
-  pinMode (VERTICAL_STEPPER_STEP_2, OUTPUT);
-  pinMode (VERTICAL_STEPPER_ENABLE_2, OUTPUT);
-
-  pinMode (HORIZONTAL_MOTOR_SELECT, OUTPUT);
-  pinMode (VERTICAL_MOTOR_SELECT, OUTPUT);
-  pinMode (MOTOR_STATE_PIN, OUTPUT);
+  pinMode (MOTOR_UP, OUTPUT);
+  pinMode (MOTOR_DOWN, OUTPUT);
 
   pinMode (BOTTOM_LIMIT, INPUT);
   pinMode (TOP_LIMIT, INPUT);

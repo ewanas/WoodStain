@@ -9,17 +9,10 @@
 void turnOffMotors () {
   debug ("Turning off both induction motors");
 
-  digitalWrite (MOTOR_STATE_PIN, LOW);
-
-  digitalWrite (HORIZONTAL_MOTOR_SELECT, LOW);
-  digitalWrite (VERTICAL_MOTOR_SELECT, LOW);
-
-  // digitalWrite (HORIZONTAL_STEPPER_ENABLE, HIGH);
-  // digitalWrite (VERTICAL_STEPPER_ENABLE, HIGH);
+  digitalWrite (MOTOR_UP, LOW);
+  digitalWrite (MOTOR_DOWN, LOW);
 
   delay (MOTOR_SWITCH_DELAY);
-
-  inductionState = NONE;
 }
 
 /**

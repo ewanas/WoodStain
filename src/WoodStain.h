@@ -4,8 +4,6 @@
 #include "Arduino.h"
 #include "pins.h"
 
-int inductionState;
-
 #define VERTICAL    0
 #define HORIZONTAL  1
 
@@ -29,17 +27,8 @@ int inductionState;
 
 // Microseconds between each step
 #define HORIZONTAL_STEPPER_MIN_DELAY  150
-#define VERTICAL_STEPPER_MIN_DELAY    100
-
 #define HORIZONTAL_STEPPER_MAX_DELAY  1600
-#define VERTICAL_STEPPER_MAX_DELAY    1000
-
 #define HORIZONTAL_STEPPER_START_GAP  600
-#define VERTICAL_STEPPER_START_GAP    1200
-
-// The direction that leads the axel towards the top and bottom
-#define DOWN_DIRECTION      1
-#define UP_DIRECTION        0
 
 // The directions that lead the paint head towards the left and right
 #define LEFT_DIRECTION      1
@@ -56,23 +45,10 @@ int inductionState;
 #define HORIZONTAL_SPEED          0
 #define VERTICAL_SPEED            1
 
-#define MOTOR_SPEED               MOT_SPEED_SEL
-#define HORIZONTAL_MOTOR_SELECT   MOT_1_SEL
-#define VERTICAL_MOTOR_SELECT     MOT_2_SEL
-#define MOTOR_STATE_PIN           MOT_PWR
-
 // Stepper motor pins
 #define HORIZONTAL_STEPPER_DIRECTION    STP_1_DIR
 #define HORIZONTAL_STEPPER_STEP         STP_1_STP
 #define HORIZONTAL_STEPPER_ENABLE       STP_1_EN
-
-#define VERTICAL_STEPPER_DIRECTION      STP_2_DIR
-#define VERTICAL_STEPPER_STEP           STP_2_STP
-#define VERTICAL_STEPPER_ENABLE         STP_2_EN
-
-#define VERTICAL_STEPPER_DIRECTION_2    STP_3_DIR
-#define VERTICAL_STEPPER_STEP_2         STP_3_STP
-#define VERTICAL_STEPPER_ENABLE_2       STP_3_EN
 
 // Limit switch pins
 #define TOP_LIMIT           LM_1
@@ -97,18 +73,13 @@ int inductionState;
 #define horizontalOff { digitalWrite (HORIZONTAL_STEPPER_ENABLE, HIGH); }
 #define horizontalOn { digitalWrite (HORIZONTAL_STEPPER_ENABLE, LOW); }
 
-#define verticalOff { digitalWrite (VERTICAL_STEPPER_ENABLE, HIGH);\
-                      digitalWrite (VERTICAL_STEPPER_ENABLE_2, HIGH); }
-#define verticalOn { digitalWrite (VERTICAL_STEPPER_ENABLE, LOW);\
-                      digitalWrite (VERTICAL_STEPPER_ENABLE_2, LOW); }
-
 #define UP      0
 #define DOWN    1
 #define LEFT    2
 #define RIGHT   3
 
-#define HORIZONTAL  0
-#define VERTICAL    1
-#define NONE        2
+// #define HORIZONTAL  0
+// #define VERTICAL    1
+// #define NONE        2
 
 #endif

@@ -3,6 +3,8 @@
 
 #include "WoodStain.h"
 
+#define __debug__
+
 #ifdef __debug__
 #define assert(c,e) if (!c) { Stop (e); }
 #define debug(m) Serial.println (m)
