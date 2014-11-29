@@ -60,3 +60,14 @@ strokes by the vertical stroke gap.
 
 To transition vertically move towards the target of ending the horizontal strokes
 by the horizontal stroke gap.
+
+To compile:
+---
+Install (ino)[https://pypi.python.org/pypi/ino/] and run
+    ino build
+
+To upload:
+    ino upload
+
+To check out debugging output:
+    ino serial
