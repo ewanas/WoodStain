@@ -63,7 +63,7 @@ by the horizontal stroke gap.
 
 To compile:
 ---
-Install (ino)[https://pypi.python.org/pypi/ino/] and run
+Install [ino](https://pypi.python.org/pypi/ino/) and run
     ino build
 
 To upload:
