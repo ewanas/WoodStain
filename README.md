@@ -64,10 +64,15 @@ by the horizontal stroke gap.
 To compile:
 ---
 Install [ino](https://pypi.python.org/pypi/ino/) and run
-    ino build
+```
+ino build
+```
 
 To upload:
-    ino upload
-
+```
+ino upload
+```
 To check out debugging output:
-    ino serial
+```
+ino serial
+```
